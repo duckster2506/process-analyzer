@@ -1,0 +1,39 @@
+{
+  "name": "duckstery/process-analyzer",
+  "description": "Dependency free process analyzer for PHP",
+  "license": "MIT",
+  "keywords": [
+    "duckster2506",
+    "analyzer",
+    "process",
+    "process-analyzer"
+  ],
+  "authors": [
+    {
+      "name": "duckstery",
+      "email": "ducdao2506@gmail.com"
+    }
+  ],
+  "homepage": "https://github.com/duckster2506/process-analyzer",
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.35",
+    "phpunit/phpunit": "10",
+    "vimeo/psalm": "^6.0@dev"
+  },
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "Duckster\\Analyzer\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Duckster\\Analyzer\\Tests\\": "tests"
+    }
+  },
+  "scripts": {
+    "psalm": "vendor/bin/psalm -c psalm.xml",
+    "test": "vendor/bin/phpunit",
+    "test-coverage": "vendor/bin/phpunit --coverage-html=build"
+  }
+}
