@@ -2,10 +2,12 @@
 
 namespace Duckster\Analyzer\Structures;
 
-use Duckster\Analyzer\Utils;
-
 class AnalysisProfile
 {
+    // ***************************************
+    // Properties
+    // ***************************************
+
     /**
      * @var string Profile's name
      */
@@ -25,6 +27,10 @@ class AnalysisProfile
      * @var array Memory footprints
      */
     private array $memFootprints;
+
+    // ***************************************
+    // Public API
+    // ***************************************
 
     /**
      * Constructor
@@ -95,9 +101,10 @@ class AnalysisProfile
     /**
      * Write a Record and return Record UID
      *
+     * @param string $name
      * @return string
      */
-    public function write(): string
+    public function write(string $name): string
     {
         // Get memory before execution
         $localMem = memory_get_usage();
@@ -107,7 +114,7 @@ class AnalysisProfile
         // Add temporary footprint
         $this->memFootprints[$uid] = memory_get_usage() - $localMem;
         // Create new Record and push to list
-        $this->records[$uid] = AnalysisRecord::open();
+        $this->records[$uid] = AnalysisRecord::open($name);
 
         // Calculate used memory
         $used = memory_get_usage() - $localMem;
@@ -123,36 +130,33 @@ class AnalysisProfile
     }
 
     /**
-     * Get Record by UID
+     * Get Record by UID. Return null if $uid not found
      *
      * @param string $uid
-     * @return AnalysisRecord
+     * @return AnalysisRecord|null
      */
-    public function get(string $uid): AnalysisRecord
+    public function get(string $uid): ?AnalysisRecord
     {
-        return $this->records[$uid];
+        return $this->records[$uid] ?? null;
     }
 
     /**
-     * Close and get record
+     * Close and get record. Return null if close failed
      *
      * @param string $uid
-     * @return AnalysisRecord
+     * @return AnalysisRecord|null
      */
-    public function close(string $uid): AnalysisRecord
+    public function close(string $uid): ?AnalysisRecord
     {
-        $record = $this->get($uid);
-        $record->close();
-
-        return $record;
+        return $this->get($uid)?->close();
     }
 
     public function __toString(): string
     {
-        return "{" . PHP_EOL .
-            "\tname: " . $this->name . "," . PHP_EOL .
-            "\tusage: " . $this->usage . "," . PHP_EOL .
-            "\tfootprints: " . print_r($this->memFootprints, true) . " bytes," . PHP_EOL .
+        return "{" .
+            " name: " . $this->name . "," .
+            " usage: " . $this->usage . "," .
+            " footprints: " . print_r($this->memFootprints, true) . " bytes," .
             "}";
     }
 }

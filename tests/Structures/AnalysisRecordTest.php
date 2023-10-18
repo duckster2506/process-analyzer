@@ -10,11 +10,12 @@ class AnalysisRecordTest extends TestCase
     public function testCanBeConstructedAndGotten(): void
     {
         // Create instance
-        $obj = AnalysisRecord::open();
+        $obj = AnalysisRecord::open("New record");
 
         // Is instance of AnalysisRecord
         $this->assertInstanceOf(AnalysisRecord::class, $obj);
         // Is data type correct
+        $this->assertSame("New record", $obj->getName());
         $this->assertIsFloat($obj->getStartTime());
         $this->assertIsFloat($obj->getEndTime());
         $this->assertIsInt($obj->getRealMem());
@@ -25,12 +26,37 @@ class AnalysisRecordTest extends TestCase
         $this->assertIsInt($obj->getUsage());
     }
 
-    public function testCanBeClosed(): void
+    public function testCanBeStartedOnceAndReturnSelf(): void
+    {
+        // Create instance and start recording
+        $obj = AnalysisRecord::open("Record");
+
+        // Check isStarted flag
+        $this->assertFalse($obj->isStarted());
+
+        // Start
+        $obj->start();
+        // Get $start timestamp
+        $start = $obj->getStartTime();
+
+        // Check isStarted flag
+        $this->assertTrue($obj->isStarted());
+
+        // Sleep
+        sleep(1);
+        // Start
+        $obj->start();
+
+        // Check $start timestamp
+        $this->assertSame($start, $obj->getStartTime());
+    }
+
+    public function testCanBeClosedAndReturnSelf(): void
     {
         // Memory before create an AnalysisRecord
         $start = memory_get_usage();
         // Create instance and start recording
-        $obj = AnalysisRecord::open()->start();
+        $obj = AnalysisRecord::open("Record")->start();
         // Memory after create an AnalysisRecord
         $end = memory_get_usage();
 
@@ -45,12 +71,38 @@ class AnalysisRecordTest extends TestCase
         // Sleep for 1s
         sleep(1);
         // Close
-        $obj->close();
+        $afterClose = $obj->close();
 
         // Check if Record's $startTime and $endTime is not equal
         $this->assertNotSame(floor($obj->getStartTime()), floor($obj->getEndTime()));
         // AnalysisRecord will save it own used memory
         $this->assertSame($mem, $obj->getUsage());
+        // Check if close return self
+        $this->assertSame($obj, $afterClose);
+    }
+
+    public function testCanOnlyBeClosedOnce(): void
+    {
+        // Create instance and start recording
+        $obj = AnalysisRecord::open("Record")->start();
+        // Close
+        $afterClose = $obj->close();
+
+        // Check isClosed flag
+        $this->assertTrue($obj->isClosed());
+        // Check if return self
+        $this->assertSame($obj, $afterClose);
+        // Get end timestamp
+        $end = $obj->getEndTime();
+
+        // Sleep for 1 second
+        sleep(1);
+        // Close one more time
+        $afterClose = $obj->close();
+        // Check if return null
+        $this->assertNull($afterClose);
+        // Check if end timestamp is still intact
+        $this->assertSame($end, $obj->getEndTime());
     }
 
     public function testCanFetchEndEmMemProperly(): void
@@ -58,7 +110,7 @@ class AnalysisRecordTest extends TestCase
         // Memory before create an AnalysisRecord
         $start = memory_get_usage();
         // Create instance
-        $obj = AnalysisRecord::open()->start();
+        $obj = AnalysisRecord::open("Record")->start();
         // Close to get endEmMem
         $obj->close();
         // Memory after create an AnalysisRecord
@@ -77,7 +129,7 @@ class AnalysisRecordTest extends TestCase
         $start = (hrtime(true) / 1e+6);
 
         // Create instance
-        $obj = AnalysisRecord::open()->start();
+        $obj = AnalysisRecord::open("Record")->start();
         // Sleep for 3 second
         sleep(3);
         // Close Record
@@ -86,7 +138,7 @@ class AnalysisRecordTest extends TestCase
         $end = hrtime(true) / 1e+6;
         // floor() will only floor the interval to ms
         // It means that may vary by few 0.xx ms because of other operation
-        $this->assertSame(floor($end - $start), floor($obj->diffTime()));
+        $this->assertLessThanOrEqual(1, abs(floor($end - $start) - floor($obj->diffTime())));
     }
 
     public function testCanCalculateEmMemDiff(): void
@@ -99,7 +151,7 @@ class AnalysisRecordTest extends TestCase
         $end = memory_get_usage();
 
         // Open Record
-        $obj = AnalysisRecord::open()->start();
+        $obj = AnalysisRecord::open("Record")->start();
         // Create String
         $str2 = str_repeat(" ", 1024);
         // Close Record

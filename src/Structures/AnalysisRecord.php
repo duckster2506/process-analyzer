@@ -4,13 +4,22 @@ namespace Duckster\Analyzer\Structures;
 
 class AnalysisRecord
 {
+    // ***************************************
+    // Properties
+    // ***************************************
+
     /**
-     * Start timestamp
+     * @var string Record's name
+     */
+    private string $name;
+
+    /**
+     * @var float Start timestamp
      */
     private float $startTime;
 
     /**
-     * End timestamp
+     * @var float End timestamp
      */
     private float $endTime;
 
@@ -45,30 +54,42 @@ class AnalysisRecord
     private int $usage;
 
     /**
+     * @var bool Record status
+     */
+    private int $status;
+
+    // ***************************************
+    // Public API
+    // ***************************************
+
+    /**
      * Constructor
      */
-    public function __construct(int $initMemory)
+    public function __construct(string $name, int $initMemory)
     {
+        $this->name = $name;
         $this->startTime = hrtime(true) / 1e+6;
         $this->endTime = hrtime(true) / 1e+6;
         $this->usage = 0;
         $this->startEmMem = $initMemory;
         $this->endEmMem = $initMemory;
+        $this->status = 0;
         $this->fetchMemory();
     }
 
     /**
      * Open a record
      *
+     * @param string $name
      * @return AnalysisRecord
      */
-    public static function open(): AnalysisRecord
+    public static function open(string $name): AnalysisRecord
     {
         // Get memory before instantiation
         $localMem = memory_get_usage();
 
         // Create instance
-        $output = new AnalysisRecord($localMem);
+        $output = new AnalysisRecord($name, $localMem);
 
         // Calculate instantiation memory usage
         $output->usage = memory_get_usage() - $localMem;
@@ -83,6 +104,12 @@ class AnalysisRecord
      */
     public function start(): AnalysisRecord
     {
+        if ($this->status === 1) {
+            return $this;
+        }
+
+        // Set status
+        $this->status = 1;
         // Reset $startTime
         $this->startTime = hrtime(true) / 1e+6;
 
@@ -92,16 +119,37 @@ class AnalysisRecord
     /**
      * Close
      *
-     * @return void
+     * @return AnalysisRecord|null
      */
-    public function close(): void
+    public function close(): ?AnalysisRecord
     {
         // Mark endTime timestamp
-        $this->endTime = hrtime(true) / 1e+6;
+        $localEnd = hrtime(true) / 1e+6;
+
+        if ($this->status === 2) {
+            return null;
+        }
+
+        // Set status
+        $this->status = 2;
+        // Save end timestamp
+        $this->endTime = $localEnd;
         // Mark endEmMem
         $this->endEmMem = memory_get_usage() - $this->usage;
         // Fetch
         $this->fetchMemory();
+
+        return $this;
+    }
+
+    /**
+     * Get Record's name
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -185,6 +233,21 @@ class AnalysisRecord
     }
 
     /**
+     * Check if Record is closed
+     *
+     * @return bool
+     */
+    public function isStarted(): bool
+    {
+        return $this->status === 1;
+    }
+
+    public function isClosed(): bool
+    {
+        return $this->status === 2;
+    }
+
+    /**
      * Get the diff between startTime and endTime
      *
      * @return float
@@ -206,15 +269,16 @@ class AnalysisRecord
 
     public function __toString(): string
     {
-        return "{" . PHP_EOL .
-            "\tstartTime: " . $this->startTime . "," . PHP_EOL .
-            "\tendTime: " . $this->endTime . "," . PHP_EOL .
-            "\trealMem: " . $this->realMem . " bytes," . PHP_EOL .
-            "\tstartEmMem: " . $this->startEmMem . " bytes," . PHP_EOL .
-            "\tendEmMem: " . $this->endEmMem . " bytes," . PHP_EOL .
-            "\trealPeak: " . $this->realPeak . " bytes," . PHP_EOL .
-            "\temPeak: " . $this->emPeak . " bytes," . PHP_EOL .
-            "\tusage: " . $this->usage . " bytes," . PHP_EOL .
+        return "{" .
+            " startTime: " . $this->startTime . "," .
+            " endTime: " . $this->endTime . "," .
+            " realMem: " . $this->realMem . " bytes," .
+            " startEmMem: " . $this->startEmMem . " bytes," .
+            " endEmMem: " . $this->endEmMem . " bytes," .
+            " realPeak: " . $this->realPeak . " bytes," .
+            " emPeak: " . $this->emPeak . " bytes," .
+            " usage: " . $this->usage . " bytes," .
+            " status: " . ($this->isStarted() ? "Started" : ($this->isClosed() ? "Closed" : "Pending")) .
             "}";
     }
 
