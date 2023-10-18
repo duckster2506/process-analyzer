@@ -27,19 +27,25 @@ class AnalysisProfile
     private array $memFootprints;
 
     /**
+     * Constructor
+     */
+    public function __construct(string $name)
+    {
+        $this->name = $name;
+        $this->records = [];
+        $this->memFootprints = [];
+        $this->usage = 0;
+    }
+
+    /**
      * Create a Profile
      */
     public static function create(string $name): AnalysisProfile
     {
         // Get memory before instantiation
         $localMem = memory_get_usage();
-
         // Create instance
-        $output = new AnalysisProfile();
-        $output->name = $name;
-        $output->records = [];
-        $output->memFootprints = [];
-
+        $output = new AnalysisProfile($name);
         // Get memory usage
         $output->usage = memory_get_usage() - $localMem;
 
@@ -49,7 +55,7 @@ class AnalysisProfile
     /**
      * Get Profile's name
      *
-     * @return int
+     * @return string
      */
     public function getName(): string
     {

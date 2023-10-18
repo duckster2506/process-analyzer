@@ -187,7 +187,7 @@ class AnalysisRecord
     /**
      * Get the diff between startTime and endTime
      *
-     * @return int
+     * @return float
      */
     public function diffTime(): float
     {
@@ -221,7 +221,6 @@ class AnalysisRecord
     /**
      * Fetch record's data
      *
-     * @param bool $excludeUsage
      * @return void
      */
     private function fetchMemory(): void
