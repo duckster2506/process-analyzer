@@ -29,8 +29,8 @@ class AnalysisRecordTest extends TestCase
     {
         // Memory before create an AnalysisRecord
         $start = memory_get_usage();
-        // Create instance
-        $obj = AnalysisRecord::open();
+        // Create instance and start recording
+        $obj = AnalysisRecord::open()->start();
         // Memory after create an AnalysisRecord
         $end = memory_get_usage();
 
@@ -58,7 +58,7 @@ class AnalysisRecordTest extends TestCase
         // Memory before create an AnalysisRecord
         $start = memory_get_usage();
         // Create instance
-        $obj = AnalysisRecord::open();
+        $obj = AnalysisRecord::open()->start();
         // Close to get endEmMem
         $obj->close();
         // Memory after create an AnalysisRecord
@@ -77,7 +77,7 @@ class AnalysisRecordTest extends TestCase
         $start = (hrtime(true) / 1e+6);
 
         // Create instance
-        $obj = AnalysisRecord::open();
+        $obj = AnalysisRecord::open()->start();
         // Sleep for 3 second
         sleep(3);
         // Close Record
@@ -99,7 +99,7 @@ class AnalysisRecordTest extends TestCase
         $end = memory_get_usage();
 
         // Open Record
-        $obj = AnalysisRecord::open();
+        $obj = AnalysisRecord::open()->start();
         // Create String
         $str2 = str_repeat(" ", 1024);
         // Close Record

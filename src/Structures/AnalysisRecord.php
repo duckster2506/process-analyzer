@@ -72,10 +72,21 @@ class AnalysisRecord
 
         // Calculate instantiation memory usage
         $output->usage = memory_get_usage() - $localMem;
-        // Reset $startTime
-        $output->startTime = hrtime(true) / 1e+6;
 
         return $output;
+    }
+
+    /**
+     * Start recording
+     *
+     * @return AnalysisRecord
+     */
+    public function start(): AnalysisRecord
+    {
+        // Reset $startTime
+        $this->startTime = hrtime(true) / 1e+6;
+
+        return $this;
     }
 
     /**
@@ -83,7 +94,7 @@ class AnalysisRecord
      *
      * @return void
      */
-    public function close()
+    public function close(): void
     {
         // Mark endTime timestamp
         $this->endTime = hrtime(true) / 1e+6;
