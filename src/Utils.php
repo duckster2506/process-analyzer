@@ -4,6 +4,10 @@ namespace Duckster\Analyzer;
 
 class Utils
 {
+    public function __construct()
+    {
+    }
+
     /**
      * Log raw string
      *

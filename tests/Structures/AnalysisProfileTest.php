@@ -23,7 +23,7 @@ class AnalysisProfileTest extends TestCase
         $this->assertIsArray($obj->getMemoryFootprints());
     }
 
-    public function testCanWriteRecordWithCorrectNameAndSaveRecordMemoryUsage(): void
+    public function testCanWriteRecordWithCorrectName(): void
     {
         // Create instance
         $obj = AnalysisProfile::create("Profile");
@@ -42,7 +42,7 @@ class AnalysisProfileTest extends TestCase
         $this->assertSame("New record", $obj->get($uid)->getName());
     }
 
-    public function testCanSaveRecordMemoryUsage(): void
+    public function testCanSaveWrittenRecordMemoryUsage(): void
     {
         // Create instance
         $obj = AnalysisProfile::create("Profile");
@@ -63,7 +63,7 @@ class AnalysisProfileTest extends TestCase
         $this->assertSame($usage, $obj->getMemoryFootprints()[$uid]);
     }
 
-    public function testCanWriteRecordsAndSaveMemoryFootprintAfterEachWritingProcess(): void
+    public function testCanWriteRecords(): void
     {
         // Create instance
         $obj = AnalysisProfile::create("Profile");
@@ -75,7 +75,6 @@ class AnalysisProfileTest extends TestCase
             $recordName = "Record " . $i;
             // Write a Record
             $uid = $obj->write($recordName);
-
 
             // Type of $uid
             $this->assertIsString($uid);
@@ -125,12 +124,14 @@ class AnalysisProfileTest extends TestCase
         $this->assertArrayHasKey($uid, $obj->getRecords());
         // Check if both getting method point to same object
         $this->assertSame($obj->get($uid), $obj->getRecords()[$uid]);
+        // Check if Record's UID is $uid
+        $this->assertSame($uid, $obj->get($uid)->getUID());
 
         // Check return null if non-exist
         $this->assertNull($obj->get("123456789987654321"));
     }
 
-    public function testCanCloseRecordAndReturnRecord(): void
+    public function testCanCloseRecord(): void
     {
         // Create instance
         $obj = AnalysisProfile::create("Profile");
@@ -146,7 +147,7 @@ class AnalysisProfileTest extends TestCase
         // Sleep for 1s
         sleep(1);
         // Close
-        $closed = $obj->close($uid);
+        $closed = $obj->stop($uid);
 
         // Check if Record's $startTime and $endTime is not equal
         $this->assertNotSame(floor($obj->get($uid)->getStartTime()), floor($obj->get($uid)->getEndTime()));
@@ -156,7 +157,6 @@ class AnalysisProfileTest extends TestCase
 
         // Check isClosed flag
         $this->assertTrue($closed->isClosed());
-
     }
 
     public function testCanReturnRecordAfterClose(): void
@@ -166,11 +166,11 @@ class AnalysisProfileTest extends TestCase
         // Write a Record
         $uid = $obj->write("Record");
         // Close
-        $closed = $obj->close($uid);
+        $closed = $obj->stop($uid);
 
-        // Check if close() return a AnalysisRecord
+        // Check if $this->stop() return a AnalysisRecord
         $this->assertInstanceOf(AnalysisRecord::class, $closed);
-        // Check if close() some non-exist UID will return null
-        $this->assertNull($obj->close("123546879987654321"));
+        // Check if $this->stop() some non-exist UID will return null
+        $this->assertNull($obj->stop("123546879987654321"));
     }
 }

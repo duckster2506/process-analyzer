@@ -148,9 +148,38 @@ class AnalyzerTest extends TestCase
         }
     }
 
-    public function testCanBeFlushed()
+    public function testCanUseSharedRecord(): void
     {
-        $class = AnalysisRecord::class;
-        Utils::rawLog($class);
+        Analyzer::clear();
+        // Check if Analyzer's Profiles size is 0
+        $this->assertEmpty(Analyzer::getProfiles());
+
+        // Start
+        $record = Analyzer::startShared(["Profile 1", "Profile 2", "Profile 3"], "Shared record");
+
+        // Will return an AnalysisRecord
+        $this->assertInstanceOf(AnalysisRecord::class, $record);
+        // Record will be mark as isShared
+        $this->assertTrue($record->isShared());
+        // All Profiles will have the same Record in list
+        $this->assertSame($record, Analyzer::profile("Profile 1")->get($record->getUID()));
+        $this->assertSame($record, Analyzer::profile("Profile 2")->get($record->getUID()));
+        $this->assertSame($record, Analyzer::profile("Profile 3")->get($record->getUID()));
+
+        // Stop
+        Analyzer::stopShared($record);
+
+        // The Record will be mark as closed
+        $this->assertTrue($record->isClosed());
+        // All Profiles will still have the same Record in list
+        $this->assertSame($record, Analyzer::profile("Profile 1")->get($record->getUID()));
+        $this->assertSame($record, Analyzer::profile("Profile 2")->get($record->getUID()));
+        $this->assertSame($record, Analyzer::profile("Profile 3")->get($record->getUID()));
     }
+
+//    public function testCanBeFlushed()
+//    {
+//        $class = AnalysisRecord::class;
+//        Utils::rawLog($class);
+//    }
 }

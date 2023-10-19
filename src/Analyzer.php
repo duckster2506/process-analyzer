@@ -2,7 +2,9 @@
 
 namespace Duckster\Analyzer;
 
+use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckster\Analyzer\Structures\AnalysisRecord;
 
 class Analyzer
 {
@@ -18,7 +20,7 @@ class Analyzer
     /**
      * @var string[] Default record name getter
      */
-    protected static array $defaultRecordGetter = [self::class, "getCaller"];
+    protected static ?array $defaultRecordGetter = null;
 
     /**
      * @var bool Print Profile as ASCII table
@@ -140,9 +142,9 @@ class Analyzer
      * @param string|null $title
      * @return string
      */
-    public static function start(string|null $title = null): string
+    public static function start(?string $title = null): string
     {
-        return self::startProfile(static::$defaultProfile, $title);
+        return self::startProfile(static::$defaultProfile ?? "Default", $title);
     }
 
     /**
@@ -152,11 +154,34 @@ class Analyzer
      * @param string|null $title
      * @return string
      */
-    public static function startProfile(string $profileName, string|null $title = null): string
+    public static function startProfile(string $profileName, ?string $title = null): string
     {
         // Start recording
         return self::profile($profileName, true)
-            ->write($title ?? call_user_func(static::$defaultRecordGetter));
+            ->write(static::getTitle($title));
+    }
+
+    /**
+     * Start recording using multiple Profile
+     *
+     * @param array $profileNames
+     * @param string|null $title
+     * @return string
+     */
+    public static function startShared(array $profileNames, ?string $title = null): IARecord
+    {
+        // Create a shared Record
+        $record = AnalysisRecord::open(static::getTitle($title));
+
+        // Iterate through each Profile and put $record
+        foreach ($profileNames as $profileName) {
+            self::profile($profileName, true)->put($record);
+        }
+
+        // Start $record
+        $record->start();
+
+        return $record;
     }
 
     /**
@@ -167,7 +192,7 @@ class Analyzer
      */
     public static function stop(string $executionUID): void
     {
-        self::stopProfile(static::$defaultProfile, $executionUID);
+        self::stopProfile(static::$defaultProfile ?? "Default", $executionUID);
     }
 
     /**
@@ -180,7 +205,17 @@ class Analyzer
     public static function stopProfile(string $profileName, string $executionUID): void
     {
         // Stop recording
-        self::profile($profileName)?->close($executionUID);
+        self::profile($profileName)?->stop($executionUID);
+    }
+
+    /**
+     * Stop a shared Record
+     *
+     * @param IARecord $record
+     * @return void
+     */
+    public static function stopShared(IARecord $record) {
+        $record->stop();
     }
 
     /**
@@ -197,10 +232,10 @@ class Analyzer
     /**
      * Flush Profile
      *
-     * @param string|null $name
+     * @param string|null $profileName
      * @return void
      */
-    public static function flush(string $profileName = null): void
+    public static function flush(?string $profileName = null): void
     {
         // Create a Printer instance
         $printerInstance = new self::$printer;
@@ -217,21 +252,31 @@ class Analyzer
     }
 
     // ***************************************
-    // Private API
+    // Overridable
     // ***************************************
 
     /**
-     * Get level 1 caller method or level 0 caller script
+     * Get title (or name) for Record
      *
      * @return string
      */
-    private static function getCaller(): string
+    protected static function getTitle(?string $title): string
     {
-        // Get the backtrace
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        // Indicate if $title is null
+        if (is_null($title)) {
+            // Indicate if
+            if (is_null(static::$defaultRecordGetter)) {
+                // Get the backtrace
+                $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 
-        return count($backtrace) === 2
-            ? "Function: " . $backtrace[1]['function']
-            : $backtrace[0]['file'] . ":" . ($backtrace[0]['line'] ?? 0);
+                return count($backtrace) === 2
+                    ? "Function: " . $backtrace[1]['function']
+                    : $backtrace[0]['file'] . ":" . ($backtrace[0]['line'] ?? 0);
+            } else {
+                return call_user_func(static::$defaultRecordGetter);
+            }
+        }
+
+        return $title;
     }
 }

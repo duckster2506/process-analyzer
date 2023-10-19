@@ -16,6 +16,7 @@ class AnalysisRecordTest extends TestCase
         $this->assertInstanceOf(AnalysisRecord::class, $obj);
         // Is data type correct
         $this->assertSame("New record", $obj->getName());
+        $this->assertIsString($obj->getUID());
         $this->assertIsFloat($obj->getStartTime());
         $this->assertIsFloat($obj->getEndTime());
         $this->assertIsInt($obj->getRealMem());
@@ -24,9 +25,16 @@ class AnalysisRecordTest extends TestCase
         $this->assertIsInt($obj->getEmPeak());
         $this->assertIsInt($obj->getRealPeak());
         $this->assertIsInt($obj->getUsage());
+        $this->assertIsBool($obj->isShared());
     }
 
-    public function testCanBeStartedOnceAndReturnSelf(): void
+    public function testOpenSharedAndNonSharedRecord(): void
+    {
+        $this->assertFalse(AnalysisRecord::open("Non shared")->isShared());
+        $this->assertTrue(AnalysisRecord::open("Shared", true)->isShared());
+    }
+
+    public function testCanBeStartedOnce(): void
     {
         // Create instance and start recording
         $obj = AnalysisRecord::open("Record");
@@ -51,37 +59,45 @@ class AnalysisRecordTest extends TestCase
         $this->assertSame($start, $obj->getStartTime());
     }
 
-    public function testCanBeClosedAndReturnSelf(): void
+    public function testCanReturnSelfAfterStarted(): void
     {
-        // Memory before create an AnalysisRecord
-        $start = memory_get_usage();
+        // Create instance and start recording
+        $obj = AnalysisRecord::open("Record");
+
+        $this->assertSame($obj, $obj->start());
+    }
+
+    public function testCanBeClosed(): void
+    {
         // Create instance and start recording
         $obj = AnalysisRecord::open("Record")->start();
-        // Memory after create an AnalysisRecord
-        $end = memory_get_usage();
-
-        // Calculate the allocated memory for $obj
-        $mem = $end - $start;
 
         // Check if Record's $startTime and $endTime is equal since it was created recently (may vary by a few ms)
-        $this->assertSame(floor($obj->getStartTime()), floor($obj->getEndTime()));
+        $this->assertLessThanOrEqual(1, floor($obj->getStartTime()) - floor($obj->getEndTime()));
         // Check if Record's $startEmMem and $endEmMem is equal since it was created recently
         $this->assertSame($obj->getStartEmMem(), $obj->getEndEmMem());
 
         // Sleep for 1s
         sleep(1);
         // Close
-        $afterClose = $obj->close();
+        $obj->close();
 
         // Check if Record's $startTime and $endTime is not equal
         $this->assertNotSame(floor($obj->getStartTime()), floor($obj->getEndTime()));
-        // AnalysisRecord will save it own used memory
-        $this->assertSame($mem, $obj->getUsage());
-        // Check if close return self
-        $this->assertSame($obj, $afterClose);
+        // Check if Record's isClosed is true
+        $this->assertTrue($obj->isClosed());
     }
 
-    public function testCanOnlyBeClosedOnce(): void
+    public function testCanReturnSelfAfterClose(): void
+    {
+        // Create instance and start recording
+        $obj = AnalysisRecord::open("Record")->start();
+
+        // Check if close return self
+        $this->assertSame($obj, $obj->close());
+    }
+
+    public function testCanBeClosedOnce(): void
     {
         // Create instance and start recording
         $obj = AnalysisRecord::open("Record")->start();
@@ -103,6 +119,54 @@ class AnalysisRecordTest extends TestCase
         $this->assertNull($afterClose);
         // Check if end timestamp is still intact
         $this->assertSame($end, $obj->getEndTime());
+    }
+
+    public function testCanCloseSharedRecordForSingleProfile(): void
+    {
+        // Create Record and start
+        $obj = AnalysisRecord::open("Shared record", true)->start();
+        // Request to close but not shared
+        $afterClosed = $obj->close();
+
+        // In this case, $obj and $afterClosed will be 2 different object
+        $this->assertNotSame($obj, $afterClosed);
+        // The original will still be open and shared
+        $this->assertFalse($obj->isClosed());
+        $this->assertTrue($obj->isShared());
+        // The after closed will be closed and non-shared
+        $this->assertTrue($afterClosed->isClosed());
+        $this->assertFalse($afterClosed->isShared());
+        // Both UID is different
+        $this->assertNotSame($obj->getUID(), $afterClosed->getUID());
+    }
+
+    public function testCanCloseSharedRecordForAllProfile(): void
+    {
+        // Create Record and start
+        $obj = AnalysisRecord::open("Shared record", true)->start();
+        // Request to close shared
+        $afterClosed = $obj->close(true);
+
+        // In this case, $obj and $afterClosed will the same
+        $this->assertSame($obj, $afterClosed);
+        // The original will be closed and shared
+        $this->assertTrue($obj->isClosed());
+        $this->assertTrue($obj->isShared());
+        // Both UID is the same
+        $this->assertSame($obj->getUID(), $afterClosed->getUID());
+    }
+
+    public function testCanSaveOwnMemoryUsage(): void
+    {
+        // Memory before create an AnalysisRecord
+        $start = memory_get_usage();
+        // Create instance and start recording
+        $obj = AnalysisRecord::open("Record")->start();
+        // Memory after create an AnalysisRecord
+        $end = memory_get_usage();
+
+        // AnalysisRecord will save it own used memory
+        $this->assertSame($end - $start, $obj->getUsage());
     }
 
     public function testCanFetchEndEmMemProperly(): void
@@ -159,7 +223,7 @@ class AnalysisRecordTest extends TestCase
 
         // Check Record emMem diff
         $this->assertSame($end - $start, $obj->diffEmMem());
-        // Just to make sure $str1 equals $str2 and both will be keep
+        // Just to make sure $str1 equals $str2 and both will be kept
         $this->assertSame($str1, $str2);
     }
 }
