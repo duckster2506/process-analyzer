@@ -5,11 +5,41 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
-use Duckster\Analyzer\AnalysisUtils;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerTest extends TestCase
 {
+    public function testCanTakeSnapshotBefore(): void
+    {
+        // Take snapshot
+        $snapshot = Analyzer::takeSnapshot();
+        $memAfterTakeSnapshot = memory_get_usage();
+
+        // Check if snapshot is capture before it has been created (it means that it mem won't be included)
+        $this->assertLessThan($memAfterTakeSnapshot, $snapshot['mem']);
+        // Check if snapshot is an array
+        $this->assertIsArray($snapshot);
+        // Check if snapshot has 'time' and 'mem'
+        $this->assertArrayHasKey('time', $snapshot);
+        $this->assertArrayHasKey('mem', $snapshot);
+
+    }
+
+    public function testCanTakeSnapshotAfter(): void
+    {
+        // Take snapshot
+        $snapshot = Analyzer::takeSnapshot(false);
+        $memAfterTakeSnapshot = memory_get_usage();
+
+        // Check if snapshot is capture after it has been created (it means that it mem will be included)
+        $this->assertEquals($memAfterTakeSnapshot, $snapshot['mem']);
+        // Check if snapshot is an array
+        $this->assertIsArray($snapshot);
+        // Check if snapshot has 'time' and 'mem'
+        $this->assertArrayHasKey('time', $snapshot);
+        $this->assertArrayHasKey('mem', $snapshot);
+    }
+
     public function testCanCreatePreparedProfile(): void
     {
         // Check if Analyzer's Profiles size is 0
