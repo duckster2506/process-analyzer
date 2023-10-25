@@ -2,9 +2,9 @@
 
 namespace Duckster\Analyzer\Tests\Structures;
 
+use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
-use Duckster\Analyzer\Utils;
 use PHPUnit\Framework\TestCase;
 
 class AnalysisProfileTest extends TestCase
@@ -19,14 +19,45 @@ class AnalysisProfileTest extends TestCase
         // Is data type correct
         $this->assertSame("New profile", $obj->getName());
         $this->assertIsArray($obj->getRecords());
-        $this->assertIsInt($obj->getUsage());
-        $this->assertIsArray($obj->getMemoryFootprints());
+        $this->assertNull($obj->getSnapshot());
+    }
+
+    public function testCanBePrepared(): void
+    {
+        // Create instance
+        $obj = AnalysisProfile::create("New profile");
+
+        // Check if Profile's snapshot is null
+        $this->assertNull($obj->getSnapshot());
+
+        // Create snapshot
+        $snapshot = [
+            'time' => hrtime(true),
+            'mem' => memory_get_usage()
+        ];
+        // Prepare
+        $afterPrepare = $obj->prep($snapshot);
+
+        // Return AnalysisProfile
+        $this->assertInstanceOf(AnalysisProfile::class, $afterPrepare);
+        // Check getter
+        $this->assertSame($snapshot, $afterPrepare->getSnapshot());
+    }
+
+    public function testMustPrepareBeforeWrite(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Profile is not ready yet");
+
+        AnalysisProfile::create("Unprepared")->write("Hello");
     }
 
     public function testCanWriteRecordWithCorrectName(): void
     {
+        // Take snapshot
+        $snapshot = Analyzer::takeSnapshot();
         // Create instance
-        $obj = AnalysisProfile::create("Profile");
+        $obj = AnalysisProfile::create("Profile")->prep($snapshot);
 
         // Init Records size is 0
         $this->assertEmpty($obj->getRecords());
@@ -40,27 +71,8 @@ class AnalysisProfileTest extends TestCase
         $this->assertCount(1, $obj->getRecords());
         // Check Record's name
         $this->assertSame("New record", $obj->get($uid)->getName());
-    }
-
-    public function testCanSaveWrittenRecordMemoryUsage(): void
-    {
-        // Create instance
-        $obj = AnalysisProfile::create("Profile");
-        // Get instance init usage
-        $initUsage = $obj->getUsage();
-        // Init Records size is 0
-        $this->assertEmpty($obj->getRecords());
-
-        // Get memory before writing
-        $start = memory_get_usage();
-        // Write a Record
-        $uid = $obj->write("New record");
-        // Get memory usage for writing Record
-        $usage = memory_get_usage() - $start;
-
-        // Check if Profile's mem footprint and usage is correct
-        $this->assertSame($usage, $obj->getUsage() - $initUsage);
-        $this->assertSame($usage, $obj->getMemoryFootprints()[$uid]);
+        // Check Record's preSnapshot
+        $this->assertSame($snapshot, $obj->get($uid)->getPreSnapshot());
     }
 
     public function testCanWriteRecords(): void
@@ -74,7 +86,7 @@ class AnalysisProfileTest extends TestCase
             // Get Record's name
             $recordName = "Record " . $i;
             // Write a Record
-            $uid = $obj->write($recordName);
+            $uid = $obj->prep(Analyzer::takeSnapshot())->write($recordName);
 
             // Type of $uid
             $this->assertIsString($uid);
@@ -85,38 +97,10 @@ class AnalysisProfileTest extends TestCase
         }
     }
 
-    public function testCanSaveMemoryFootprintAfterEachWritingProcess(): void{
-        // Create instance
-        $obj = AnalysisProfile::create("Profile");
-        // Get init memory usage
-        $totalUsage = $obj->getUsage();
-        // Init Records size is 0
-        $this->assertEmpty($obj->getRecords());
-
-        for ($i = 0; $i < 100; $i++) {
-            // Get Record's name
-            $recordName = "Record " . $i;
-            // Get memory before writing
-            $start = memory_get_usage();
-            // Write a Record
-            $uid = $obj->write($recordName);
-            // Get memory usage for writing Record
-            $usage = memory_get_usage() - $start;
-
-            // Add usage to $initUsage to get total usage
-            $totalUsage += $usage;
-
-            // Check if Profile's mem footprint is correct
-            $this->assertSame($usage, $obj->getMemoryFootprints()[$uid]);
-            // Check if Profile's total usage is correct
-            $this->assertSame($totalUsage, $obj->getUsage());
-        }
-    }
-
     public function testCanBeGottenByUid(): void
     {
         // Create instance
-        $obj = AnalysisProfile::create("Profile");
+        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
         // Write a Record
         $uid = $obj->write("Record");
 
@@ -134,23 +118,25 @@ class AnalysisProfileTest extends TestCase
     public function testCanCloseRecord(): void
     {
         // Create instance
-        $obj = AnalysisProfile::create("Profile");
+        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
 
         // Write a Record
         $uid = $obj->write("Record");
         // Save the reference of Record
         $ref = $obj->get($uid);
 
-        // Check if Record's $startTime and $endTime is equal since it was created recently (may vary by a few ms)
-        $this->assertSame(floor($obj->get($uid)->getStartTime()), floor($obj->get($uid)->getEndTime()));
+        // Since $record is created recently, check if startTime is not 0
+        $this->assertNotEquals(0.0, $obj->get($uid)->getStartTime());
+        // Since $record is created recently, check if endTime is 0
+        $this->assertEquals(0.0, $obj->get($uid)->getEndTime());
 
         // Sleep for 1s
         sleep(1);
         // Close
         $closed = $obj->stop($uid);
 
-        // Check if Record's $startTime and $endTime is not equal
-        $this->assertNotSame(floor($obj->get($uid)->getStartTime()), floor($obj->get($uid)->getEndTime()));
+        // Since $record is stopped recently, check if endTime is not 0
+        $this->assertNotEquals(0.0, $obj->get($uid)->getEndTime());
         // Check if the closed one is still the same one
         $this->assertSame($ref, $obj->get($uid));
 
@@ -162,7 +148,7 @@ class AnalysisProfileTest extends TestCase
     public function testCanReturnRecordAfterClose(): void
     {
         // Create instance
-        $obj = AnalysisProfile::create("Profile");
+        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
         // Write a Record
         $uid = $obj->write("Record");
         // Close

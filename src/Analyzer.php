@@ -5,6 +5,8 @@ namespace Duckster\Analyzer;
 use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
+use Exception;
+use phpDocumentor\Reflection\Types\Self_;
 
 class Analyzer
 {
@@ -46,6 +48,27 @@ class Analyzer
     // ***************************************
 
     /**
+     * Generate a snapshot
+     *
+     * @return array
+     */
+    public static function takeSnapshot(bool $beforeCreate = true): array
+    {
+        $mem = memory_get_usage();
+        $output = [
+            'mem' => $mem,
+            'time' => hrtime(true)
+        ];
+
+        // Get memory at the point before create output
+        if ($beforeCreate) return $output;
+        // Get memory at the point after create output
+        $output['mem'] = memory_get_usage();
+
+        return $output;
+    }
+
+    /**
      * Get Profiles
      *
      * @return AnalysisProfile[]
@@ -56,35 +79,31 @@ class Analyzer
     }
 
     /**
-     * Get Profile by name
+     * Get a prepared Profile by name
      *
      * @param string $name
-     * @param bool $createIfNotExist
-     * @return AnalysisProfile|null
+     * @param bool $prepare If true, create Profile if not exist and return a prepared Profile. Else, throw Exception
+     * @return AnalysisProfile
+     * @throws Exception
      */
-    public static function profile(string $name, bool $createIfNotExist = false): ?AnalysisProfile
+    public static function profile(string $name, bool $prepare = true): AnalysisProfile
     {
-        // Create if not exist
-        if ($createIfNotExist) {
-            self::createProfile($name);
-        }
+        // Take snapshot
+        $snapshot = self::takeSnapshot();
 
-        return self::$profiles[$name] ?? null;
-    }
-
-    /**
-     * Create a Profile
-     *
-     * @param string $name
-     * @return void
-     */
-    public static function createProfile(string $name): void
-    {
-        // Check if Profile exists
+        // Check if Profile is existing
         if (!self::hasProfile($name)) {
+            // Check if Exception should be thrown
+            if (!$prepare) throw new Exception("Profile not found");
             // Create Profile
             self::$profiles[$name] = AnalysisProfile::create($name);
         }
+
+        if ($prepare) {
+            return self::$profiles[$name]?->prep($snapshot);
+        }
+
+        return self::$profiles[$name];
     }
 
     /**
@@ -107,7 +126,7 @@ class Analyzer
     }
 
     /**
-     * Delete Profile. Return Profile if delete successfully, else return null
+     * Delete Profile. Return unprepared Profile if delete successfully, else return null
      *
      * @param string $name
      * @return AnalysisProfile|null
@@ -157,25 +176,28 @@ class Analyzer
     public static function startProfile(string $profileName, ?string $title = null): string
     {
         // Start recording
-        return self::profile($profileName, true)
-            ->write(static::getTitle($title));
+        return self::profile($profileName)->write(static::getTitle($title));
     }
 
     /**
-     * Start recording using multiple Profile
+     * Start recording using multiple Profile. Throw Exception if Profile(s) not exist
      *
      * @param array $profileNames
      * @param string|null $title
-     * @return string
+     * @return IARecord
      */
     public static function startShared(array $profileNames, ?string $title = null): IARecord
     {
+        // Take a snapshot
+        $snapshot = self::takeSnapshot();
         // Create a shared Record
-        $record = AnalysisRecord::open(static::getTitle($title));
+        $record = AnalysisRecord::open(static::getTitle($title), true);
 
         // Iterate through each Profile and put $record
         foreach ($profileNames as $profileName) {
-            self::profile($profileName, true)->put($record);
+            self::profile($profileName)
+                ->prep($snapshot)
+                ->put($record);
         }
 
         // Start $record
@@ -205,7 +227,9 @@ class Analyzer
     public static function stopProfile(string $profileName, string $executionUID): void
     {
         // Stop recording
-        self::profile($profileName)?->stop($executionUID);
+        self::profile($profileName, false)
+            ?->stop($executionUID)
+            ?->setPostSnapshot(self::takeSnapshot(false));
     }
 
     /**
@@ -214,8 +238,9 @@ class Analyzer
      * @param IARecord $record
      * @return void
      */
-    public static function stopShared(IARecord $record) {
-        $record->stop();
+    public static function stopShared(IARecord $record): void
+    {
+        $record->stop()->setPostSnapshot(self::takeSnapshot(false));
     }
 
     /**

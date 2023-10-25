@@ -2,6 +2,7 @@
 
 namespace Duckster\Analyzer\Structures;
 
+use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Interfaces\IARecord;
 
 class AnalysisRecord implements IARecord
@@ -21,47 +22,27 @@ class AnalysisRecord implements IARecord
     private string $name;
 
     /**
-     * @var float Start timestamp
+     * @var float Mark start of preparation (pre execution) before start of recording
      */
-    private float $startTime;
+    private array $preSnapshot;
 
     /**
-     * @var float End timestamp
+     * @var float Mark start of recording
      */
-    private float $endTime;
+    private array $startSnapshot;
 
     /**
-     * @var int Real memory usage
+     * @var float Mark end of recording
      */
-    private int $realMem;
+    private array $endSnapshot;
 
     /**
-     * @var int start emalloc() memory usage
+     * @var array Mark end of preparation (post execution) after end of recording
      */
-    private int $startEmMem;
+    private array $postSnapshot;
 
     /**
-     * @var int end emalloc() memory usage
-     */
-    private int $endEmMem;
-
-    /**
-     * @var int Real peak memory
-     */
-    private int $realPeak;
-
-    /**
-     * @var int Peak emalloc() memory
-     */
-    private int $emPeak;
-
-    /**
-     * @var int Self usage memory
-     */
-    private int $usage;
-
-    /**
-     * @var bool Record status
+     * @var int Record status
      */
     private int $status;
 
@@ -77,17 +58,15 @@ class AnalysisRecord implements IARecord
     /**
      * Constructor
      */
-    public function __construct(string $name, int $initMemory)
+    public function __construct(string $name)
     {
         $this->name = $name;
-        $this->startTime = hrtime(true) / 1e+6;
-        $this->endTime = hrtime(true) / 1e+6;
-        $this->usage = 0;
-        $this->startEmMem = $initMemory;
-        $this->endEmMem = $initMemory;
+        $this->preSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->startSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->endSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->postSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->status = 0;
         $this->isShared = false;
-        $this->fetchMemory();
     }
 
     /**
@@ -99,16 +78,10 @@ class AnalysisRecord implements IARecord
      */
     public static function open(string $name, bool $isShared = false): AnalysisRecord
     {
-        // Get memory before instantiation
-        $localMem = memory_get_usage();
-
         // Create instance
-        $output = new AnalysisRecord($name, $localMem);
+        $output = new AnalysisRecord($name);
         $output->uid = uniqid();
         $output->isShared = $isShared;
-
-        // Calculate instantiation memory usage
-        $output->usage = memory_get_usage() - $localMem;
 
         return $output;
     }
@@ -124,8 +97,8 @@ class AnalysisRecord implements IARecord
 
         // Set status
         $this->status = 1;
-        // Reset $startTime
-        $this->startTime = hrtime(true) / 1e+6;
+        // Create start snapshot
+        $this->startSnapshot = Analyzer::takeSnapshot(false);
 
         return $this;
     }
@@ -138,8 +111,8 @@ class AnalysisRecord implements IARecord
      */
     public function close(bool $isShared = false): ?AnalysisRecord
     {
-        // Mark endTime timestamp
-        $localEnd = hrtime(true) / 1e+6;
+        // Create snapshot
+        $snapshot = Analyzer::takeSnapshot();
 
         if ($this->status === 2) return null;
 
@@ -156,11 +129,7 @@ class AnalysisRecord implements IARecord
         // Set status
         $output->status = 2;
         // Save end timestamp
-        $output->endTime = $localEnd;
-        // Mark endEmMem
-        $output->endEmMem = memory_get_usage() - $this->usage;
-        // Fetch
-        $output->fetchMemory();
+        $output->endSnapshot = $snapshot;
 
         return $output;
     }
@@ -173,6 +142,86 @@ class AnalysisRecord implements IARecord
     public function stop(): ?IARecord
     {
         return $this->close(true);
+    }
+
+    /**
+     * Get the preparation time to start and stop this Record
+     *
+     * @return float
+     */
+    public function prepTime(): float
+    {
+        // Get the preparation time before start recording
+        $preTime = ($this->startSnapshot['time'] ?? 0.0) - ($this->preSnapshot['time'] ?? 0.0);
+        // Get the preparation time after stop recording
+        $postTime = ($this->postSnapshot['time'] ?? 0.0) - ($this->endSnapshot['time'] ?? 0.0);
+
+        return $preTime + $postTime;
+    }
+
+    /**
+     * Get the time diff of recording
+     *
+     * @return float
+     */
+    public function diffTime(): float
+    {
+        return ($this->startSnapshot['time'] === 0.0 || $this->endSnapshot['time'] === 0.0)
+            ? 0.0
+            : $this->endSnapshot['time'] - $this->startSnapshot['time'];
+    }
+
+    /**
+     * Get the preparation memory to start and stop this Record
+     *
+     * @return int
+     */
+    public function prepMem(): int
+    {
+        // Get the preparation memory before start recording
+        $preTime = ($this->startSnapshot['mem'] ?? 0) - ($this->preSnapshot['mem'] ?? 0);
+        // Get the preparation memory after stop recording
+        $postTime = ($this->postSnapshot['mem'] ?? 0) - ($this->endSnapshot['mem'] ?? 0);
+
+        return $preTime + $postTime;
+    }
+
+    /**
+     * Get the memory diff of recording
+     *
+     * @return int
+     */
+    public function diffMem(): int
+    {
+        return ($this->startSnapshot['mem'] === 0 || $this->endSnapshot['mem'] === 0)
+            ? 0
+            : $this->endSnapshot['mem'] - $this->startSnapshot['mem'];
+    }
+
+    /**
+     * Set pre snapshot and return self
+     *
+     * @param array $snapshot
+     * @return $this
+     */
+    public function setPreSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->preSnapshot = $snapshot;
+
+        return $this;
+    }
+
+    /**
+     * Set post snapshot and return self
+     *
+     * @param array $snapshot
+     * @return $this
+     */
+    public function setPostSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->postSnapshot = $snapshot;
+
+        return $this;
     }
 
     /**
@@ -202,7 +251,7 @@ class AnalysisRecord implements IARecord
      */
     public function getStartTime(): float
     {
-        return $this->startTime;
+        return $this->startSnapshot['time'] ?? 0.0;
     }
 
     /**
@@ -212,17 +261,7 @@ class AnalysisRecord implements IARecord
      */
     public function getEndTime(): float
     {
-        return $this->endTime;
-    }
-
-    /**
-     * Get real memory usage
-     *
-     * @return int
-     */
-    public function getRealMem(): int
-    {
-        return $this->realMem;
+        return $this->endSnapshot['time'] ?? 0.0;
     }
 
     /**
@@ -230,9 +269,9 @@ class AnalysisRecord implements IARecord
      *
      * @return int
      */
-    public function getStartEmMem(): int
+    public function getStartMem(): int
     {
-        return $this->startEmMem;
+        return $this->startSnapshot['mem'] ?? 0;
     }
 
     /**
@@ -240,39 +279,9 @@ class AnalysisRecord implements IARecord
      *
      * @return int
      */
-    public function getEndEmMem(): int
+    public function getEndMem(): int
     {
-        return $this->endEmMem;
-    }
-
-    /**
-     * Get real peak memory
-     *
-     * @return int
-     */
-    public function getRealPeak(): int
-    {
-        return $this->realPeak;
-    }
-
-    /**
-     * Get emalloc() peak memory
-     *
-     * @return int
-     */
-    public function getEmPeak(): int
-    {
-        return $this->emPeak;
-    }
-
-    /**
-     * Get self memory usage
-     *
-     * @return int
-     */
-    public function getUsage(): int
-    {
-        return $this->usage;
+        return $this->endSnapshot['mem'] ?? 0;
     }
 
     /**
@@ -306,49 +315,33 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Get the diff between startTime and endTime
+     * Get pre start snapshot
      *
-     * @return float
+     * @return array
      */
-    public function diffTime(): float
+    public function getPreSnapshot(): array
     {
-        return $this->endTime - $this->startTime;
+        return $this->preSnapshot;
     }
 
     /**
-     * Get the diff between startEmMem and endEmMem
+     * Get post end snapshot
      *
-     * @return int
+     * @return array
      */
-    public function diffEmMem(): int
+    public function getPostSnapshot(): array
     {
-        return $this->endEmMem - $this->startEmMem;
+        return $this->postSnapshot;
     }
 
     public function __toString(): string
     {
         return "{" .
-            "startTime: " . $this->startTime . "," .
-            " endTime: " . $this->endTime . "," .
-            " realMem: " . $this->realMem . " bytes," .
-            " startEmMem: " . $this->startEmMem . " bytes," .
-            " endEmMem: " . $this->endEmMem . " bytes," .
-            " realPeak: " . $this->realPeak . " bytes," .
-            " emPeak: " . $this->emPeak . " bytes," .
-            " usage: " . $this->usage . " bytes," .
+            "startTime: " . $this->getStartTime() . "," .
+            " endTime: " . $this->getEndTime() . "," .
+            " startMem: " . $this->getStartMem() . " bytes," .
+            " endMem: " . $this->getEndMem() . " bytes," .
             " status: " . ($this->isStarted() ? "Started" : ($this->isClosed() ? "Closed" : "Pending")) .
             "}";
-    }
-
-    /**
-     * Fetch Record's data
-     *
-     * @return void
-     */
-    private function fetchMemory(): void
-    {
-        $this->emPeak = memory_get_peak_usage();
-        $this->realMem = memory_get_usage(true);
-        $this->realPeak = memory_get_peak_usage(true);
     }
 }

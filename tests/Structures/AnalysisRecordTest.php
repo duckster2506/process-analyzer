@@ -2,6 +2,8 @@
 
 namespace Duckster\Analyzer\Tests\Structures;
 
+use Duckster\Analyzer\AnalysisUtils;
+use Duckster\Analyzer\Analyzer;
 use PHPUnit\Framework\TestCase;
 use Duckster\Analyzer\Structures\AnalysisRecord;
 
@@ -17,15 +19,11 @@ class AnalysisRecordTest extends TestCase
         // Is data type correct
         $this->assertSame("New record", $obj->getName());
         $this->assertIsString($obj->getUID());
-        $this->assertIsFloat($obj->getStartTime());
-        $this->assertIsFloat($obj->getEndTime());
-        $this->assertIsInt($obj->getRealMem());
-        $this->assertIsInt($obj->getStartEmMem());
-        $this->assertIsInt($obj->getEndEmMem());
-        $this->assertIsInt($obj->getEmPeak());
-        $this->assertIsInt($obj->getRealPeak());
-        $this->assertIsInt($obj->getUsage());
-        $this->assertIsBool($obj->isShared());
+        $this->assertEmpty(0.0, $obj->getStartTime());
+        $this->assertEmpty(0.0, $obj->getEndTime());
+        $this->assertEquals(0, $obj->getStartMem());
+        $this->assertEquals(0, $obj->getEndMem());
+        $this->assertFalse($obj->isShared());
     }
 
     public function testOpenSharedAndNonSharedRecord(): void
@@ -41,6 +39,10 @@ class AnalysisRecordTest extends TestCase
 
         // Check isStarted flag
         $this->assertFalse($obj->isStarted());
+        // Check if startTime = 0
+        $this->assertEquals(0.0, $obj->getStartTime());
+        // Check if startMem = 0
+        $this->assertEquals(0.0, $obj->getStartMem());
 
         // Start
         $obj->start();
@@ -49,13 +51,17 @@ class AnalysisRecordTest extends TestCase
 
         // Check isStarted flag
         $this->assertTrue($obj->isStarted());
+        // Check if startTime != 0
+        $this->assertNotEquals(0.0, $obj->getStartTime());
+        // Check if startMem != 0
+        $this->assertNotEquals(0.0, $obj->getStartMem());
 
         // Sleep
         sleep(1);
         // Start
         $obj->start();
 
-        // Check $start timestamp
+        // $start timestamp didn't change after the second start()
         $this->assertSame($start, $obj->getStartTime());
     }
 
@@ -72,10 +78,10 @@ class AnalysisRecordTest extends TestCase
         // Create instance and start recording
         $obj = AnalysisRecord::open("Record")->start();
 
-        // Check if Record's $startTime and $endTime is equal since it was created recently (may vary by a few ms)
-        $this->assertLessThanOrEqual(1, floor($obj->getStartTime()) - floor($obj->getEndTime()));
-        // Check if Record's $startEmMem and $endEmMem is equal since it was created recently
-        $this->assertSame($obj->getStartEmMem(), $obj->getEndEmMem());
+        // Check if endTime = 0
+        $this->assertEquals(0.0, $obj->getEndTime());
+        // Check if endMem = 0
+        $this->assertEquals(0.0, $obj->getEndMem());
 
         // Sleep for 1s
         sleep(1);
@@ -83,7 +89,7 @@ class AnalysisRecordTest extends TestCase
         $obj->close();
 
         // Check if Record's $startTime and $endTime is not equal
-        $this->assertNotSame(floor($obj->getStartTime()), floor($obj->getEndTime()));
+        $this->assertNotEquals(0.0, $obj->getEndTime());
         // Check if Record's isClosed is true
         $this->assertTrue($obj->isClosed());
     }
@@ -156,53 +162,169 @@ class AnalysisRecordTest extends TestCase
         $this->assertSame($obj->getUID(), $afterClosed->getUID());
     }
 
-    public function testCanSaveOwnMemoryUsage(): void
-    {
-        // Memory before create an AnalysisRecord
-        $start = memory_get_usage();
-        // Create instance and start recording
-        $obj = AnalysisRecord::open("Record")->start();
-        // Memory after create an AnalysisRecord
-        $end = memory_get_usage();
-
-        // AnalysisRecord will save it own used memory
-        $this->assertSame($end - $start, $obj->getUsage());
-    }
-
-    public function testCanFetchEndEmMemProperly(): void
-    {
-        // Memory before create an AnalysisRecord
-        $start = memory_get_usage();
-        // Create instance
-        $obj = AnalysisRecord::open("Record")->start();
-        // Close to get endEmMem
-        $obj->close();
-        // Memory after create an AnalysisRecord
-        $end = memory_get_usage();
-        // Calculate the allocated memory for $obj
-        $mem = $end - $start;
-
-        // Check if AnalysisRecord will always exclude it used memory out of endEmMem
-        $this->assertSame($end, $obj->getEndEmMem() + $obj->getUsage());
-        $this->assertSame($end - $mem, $obj->getEndEmMem());
-    }
-
     public function testCanCalculateTimeDiff(): void
     {
         // Get the start of execution
-        $start = (hrtime(true) / 1e+6);
+        $start = hrtime(true);
+        // Sleep for 2 second
+        sleep(2);
+        // Get end of execution
+        $end = hrtime(true);
 
         // Create instance
         $obj = AnalysisRecord::open("Record")->start();
-        // Sleep for 3 second
-        sleep(3);
+        // Sleep for 2 second
+        sleep(2);
         // Close Record
         $obj->close();
 
-        $end = hrtime(true) / 1e+6;
-        // floor() will only floor the interval to ms
-        // It means that may vary by few 0.xx ms because of other operation
-        $this->assertLessThanOrEqual(1, abs(floor($end - $start) - floor($obj->diffTime())));
+        // Get timeDiff
+        $timeDiff = $end - $start;
+
+        // timeDiff = 0 if not closed
+        $this->assertEquals(0.0, AnalysisRecord::open("Nonstop record")->start()->diffTime());
+
+        // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
+        // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
+        // And there may be still have redundant time for machine to actually put to sleep and wakeup
+        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // And the time diff of 2 operation may sometime bigger or smaller compare to each other
+        $this->assertLessThanOrEqual(20, abs($timeDiff - $obj->diffTime()) / 1e+6);
+        // To make sure $timeDiff is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $timeDiff);
+        // To make sure $obj->diffTime is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $obj->diffTime());
+    }
+
+    public function testCanExcludePreStartPreparationTimeOutOfTimeDiff(): void
+    {
+        // Get timestamp
+        $start = hrtime(true);
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Get timestamp
+        $end = hrtime(true);
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Sleep (this is the pre start stage, do whatever we want)
+        sleep(2);
+        // Start
+        $record->start();
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Close
+        $record->close();
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $timeDiff = $end - $start;
+
+        // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
+        // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
+        // And there may be still have redundant time for machine to actually put to sleep and wakeup
+        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // And the time diff of 2 operation may sometime bigger or smaller compare to each other
+        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        // To make sure $timeDiff is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $timeDiff);
+        // To make sure $record->diffTime is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $record->diffTime());
+    }
+
+    public function testCanExcludePostEndPreparationTimeOutOfTimeDiff(): void
+    {
+        // Get timestamp
+        $start = hrtime(true);
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Get timestamp
+        $end = hrtime(true);
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Start
+        $record->start();
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Close
+        $record->close();
+        // Sleep (this is the post end stage, do whatever we want)
+        sleep(2);
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $timeDiff = $end - $start;
+
+        // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
+        // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
+        // And there may be still have redundant time for machine to actually put to sleep and wakeup
+        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // And the time diff of 2 operation may sometime bigger or smaller compare to each other
+        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        // To make sure $timeDiff is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $timeDiff);
+        // To make sure $record->diffTime is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $record->diffTime());
+    }
+
+    public function testCanExcludePreparationTimeOutOfTimeDiff(): void
+    {
+        // Get timestamp
+        $start = hrtime(true);
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Get timestamp
+        $end = hrtime(true);
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Sleep (this is the pre start stage, do whatever we want)
+        sleep(1);
+        // Start
+        $record->start();
+        // Sleep 2s (main logic)
+        sleep(2);
+        // Close
+        $record->close();
+        // Sleep (this is the post end stage, do whatever we want)
+        sleep(1);
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $timeDiff = $end - $start;
+
+        // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
+        // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
+        // And there may be still have redundant time for machine to actually put to sleep and wakeup
+        // The time diff of 2 operation may vary between 0 and 20 (usually between 1~5 and sometime bigger)
+        // And the time diff of 2 operation may sometime bigger or smaller compare to each other
+        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        // To make sure $timeDiff is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $timeDiff);
+        // To make sure $record->diffTime is more than 2s
+        $this->assertGreaterThanOrEqual(2000, $record->diffTime());
     }
 
     public function testCanCalculateEmMemDiff(): void
@@ -218,12 +340,172 @@ class AnalysisRecordTest extends TestCase
         $obj = AnalysisRecord::open("Record")->start();
         // Create String
         $str2 = str_repeat(" ", 1024);
+        // memDiff = 0 if not closed
+        $this->assertEquals(0, $obj->diffMem());
         // Close Record
         $obj->close();
 
         // Check Record emMem diff
-        $this->assertSame($end - $start, $obj->diffEmMem());
-        // Just to make sure $str1 equals $str2 and both will be kept
+        $this->assertSame($end - $start, $obj->diffMem());
+        // Just to make sure $str1 equals $str2 and both will be kept out of GC
         $this->assertSame($str1, $str2);
+    }
+
+    public function testCanExcludePreStartPreparationMemOutOfMemDiff(): void
+    {
+        // Get timestamp
+        $start = memory_get_usage();
+        // Create String (main logic)
+        $str1 = str_repeat(" ", 1024);
+        // Get timestamp
+        $end = memory_get_usage();
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Create String (this is the pre start stage, do whatever we want)
+        $str2 = str_repeat(" ", 2048);
+        // Start
+        $record->start();
+        // Create String (main logic)
+        $str3 = str_repeat(" ", 1024);
+        // Close
+        $record->close();
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $memDiff = $end - $start;
+
+        // Check if Record's memDiff excludes it mem usage
+        $this->assertSame($memDiff, $record->diffMem());
+        // These operation is to make sure $str[x] will be kept out of GC
+        $this->assertIsString($str1);
+        $this->assertIsString($str2);
+        $this->assertIsString($str3);
+    }
+
+    public function testCanExcludePostEndPreparationMemOutOfMemDiff(): void
+    {
+        // Get timestamp
+        $start = memory_get_usage();
+        // Create String (main logic)
+        $str1 = str_repeat(" ", 1024);
+        // Get timestamp
+        $end = memory_get_usage();
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Start
+        $record->start();
+        // Create String (main logic)
+        $str2 = str_repeat(" ", 1024);
+        // Close
+        $record->close();
+        // Create String (this is the pre start stage, do whatever we want)
+        $str3 = str_repeat(" ", 2048);
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $memDiff = $end - $start;
+
+        // Check if Record's memDiff excludes it mem usage
+        $this->assertSame($memDiff, $record->diffMem());
+        // These operation is to make sure $str[x] will be kept out of GC
+        $this->assertIsString($str1);
+        $this->assertIsString($str2);
+        $this->assertIsString($str3);
+    }
+
+    public function testCanExcludePreparationMemOutOfMemDiff(): void
+    {
+        // Get timestamp
+        $start = memory_get_usage();
+        // Create String (main logic)
+        $str1 = str_repeat(" ", 1024);
+        // Get timestamp
+        $end = memory_get_usage();
+
+        // Take snapshot
+        $startSS = Analyzer::takeSnapshot();
+        // Create Record
+        $record = AnalysisRecord::open("New record");
+        // Create String (this is the pre start stage, do whatever we want)
+        $str2 = str_repeat(" ", 1024);
+        // Start
+        $record->start();
+        // Create String (main logic)
+        $str3 = str_repeat(" ", 1024);
+        // Close
+        $record->close();
+        // Create String (this is the pre start stage, do whatever we want)
+        $str4 = str_repeat(" ", 1024);
+        // Take snapshot
+        $endSS = Analyzer::takeSnapshot(false);
+
+        // Set snapshot
+        $record->setPreSnapshot($startSS)
+            ->setPostSnapshot($endSS);
+
+        // Get timeDiff
+        $memDiff = $end - $start;
+
+        // Check if Record's memDiff excludes it mem usage
+        $this->assertSame($memDiff, $record->diffMem());
+        // These operation is to make sure $str[x] will be kept out of GC
+        $this->assertSame($str1, $str2);
+        $this->assertSame($str2, $str3);
+        $this->assertSame($str3, $str4);
+    }
+
+    public function testTimeDiffError(): void
+    {
+        // Total error
+        $total = 0.0;
+
+        for ($i = 0; $i < 1000; $i++) {
+            // Get timestamp
+            $start = hrtime(true);
+            // Get timestamp
+            $end = hrtime(true);
+
+            // Take snapshot
+            $startSS = Analyzer::takeSnapshot();
+            // Create Record
+            $record = AnalysisRecord::open("New record");
+            // Sleep for 1ms (this is the pre start stage, do whatever we want)
+            usleep(1000);
+            // Start
+            $record->start();
+            // Close
+            $record->close();
+            // Sleep (this is the post end stage, do whatever we want)
+            usleep(1000);
+            // Take snapshot
+            $endSS = Analyzer::takeSnapshot(false);
+
+            // Set snapshot
+            $record->setPreSnapshot($startSS)
+                ->setPostSnapshot($endSS);
+
+            // Increase total error (in μs (microsecond))
+            $total += abs(($end - $start) - $record->diffTime()) / 1e+3;
+        }
+
+        // This test will show the error between 2 operation compare to each other
+        // The average error between diffs will vary between 0 - 20 μs
+        $this->assertLessThanOrEqual(20, $total / 1000);
     }
 }

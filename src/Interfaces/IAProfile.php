@@ -2,14 +2,23 @@
 
 namespace Duckster\Analyzer\Interfaces;
 
-use Duckster\Analyzer\Structures\AnalysisRecord;
-
 interface IAProfile
 {
     /**
      * Create a Profile
+     *
+     * @param string $name
+     * @return IAProfile
      */
     public static function create(string $name): IAProfile;
+
+    /**
+     * Prepare Profile
+     *
+     * @param array|null $snapshot
+     * @return IAProfile
+     */
+    public function prep(?array $snapshot): IAProfile;
 
     /**
      * Get Profile's name
@@ -19,25 +28,11 @@ interface IAProfile
     public function getName(): string;
 
     /**
-     * Get list of records
+     * Get current snapshot
      *
      * @return array
      */
-    public function getRecords(): array;
-
-    /**
-     * Get Profile's memory usage
-     *
-     * @return int
-     */
-    public function getUsage(): int;
-
-    /**
-     * Get Profile's memory footprints
-     *
-     * @return array
-     */
-    public function getMemoryFootprints(): array;
+    public function getSnapshot(): ?array;
 
     /**
      * Write a Record and return Record's UID
@@ -54,6 +49,14 @@ interface IAProfile
      * @return string
      */
     public function put(IARecord $record): string;
+
+    /**
+     * Get Record by UID. Return null if $uid not found
+     *
+     * @param string $uid
+     * @return IARecord|null
+     */
+    public function get(string $uid): ?IARecord;
 
     /**
      * Close and get record. Return null if close failed

@@ -2,12 +2,8 @@
 
 namespace Duckster\Analyzer;
 
-class Utils
+class AnalysisUtils
 {
-    public function __construct()
-    {
-    }
-
     /**
      * Log raw string
      *
@@ -17,5 +13,18 @@ class Utils
     public static function rawLog(string $data): void
     {
         file_put_contents("logs/" . date('Y-m-d') . ".log", $data . PHP_EOL, FILE_APPEND);
+    }
+
+    /**
+     * Generate a snapshot stat
+     *
+     * @return array
+     */
+    public static function takeSnapshot(): array
+    {
+        return [
+            'time' => hrtime(true),
+            'mem' => memory_get_usage()
+        ];
     }
 }

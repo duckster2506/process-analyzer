@@ -5,24 +5,36 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
-use Duckster\Analyzer\Utils;
+use Duckster\Analyzer\AnalysisUtils;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerTest extends TestCase
 {
-    public function testCanCreateProfile(): void
+    public function testCanCreatePreparedProfile(): void
     {
         // Check if Analyzer's Profiles size is 0
         $this->assertEmpty(Analyzer::getProfiles());
 
         $name = "New profile has been created";
         // Create Profile
-        Analyzer::createProfile($name);
+        $profile = Analyzer::profile($name);
 
         // Check if Analyzer's Profiles size is 1
         $this->assertCount(1, Analyzer::getProfiles());
-        // Check if Analyzer's Profiles name
-        $this->assertSame($name, Analyzer::profile($name)->getName());
+        // Check if return an AnalysisProfile
+        $this->assertInstanceOf(AnalysisProfile::class, $profile);
+        // Check $profile name
+        $this->assertSame($name, $profile->getName());
+        // Check if $profile is prepared
+        $this->assertIsArray($profile->getSnapshot());
+    }
+
+    public function testCanNotCreateUnpreparedProfile(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Profile not found");
+
+        Analyzer::profile("Unprepared", false);
     }
 
     public function testCanAddProfile(): void
@@ -44,22 +56,37 @@ class AnalyzerTest extends TestCase
 
     public function testCanGetProfile(): void
     {
-        $this->assertInstanceOf(AnalysisProfile::class, Analyzer::profile("Create profile by add"));
-        $this->assertNull(Analyzer::profile("This Profile is not suppose to exist"));
-        $this->assertInstanceOf(AnalysisProfile::class, Analyzer::profile("This Profile is not suppose to exist", true));
+        // Get Profile from first test case
+        // At this point, Profile is prepared, so we have to unload it snapshot
+        $profile = Analyzer::profile("New profile has been created", false)->prep(null);
+        // Get Profile again
+        $profile = Analyzer::profile("New profile has been created", false);
+
+        // Check return type
+        $this->assertInstanceOf(AnalysisProfile::class, $profile);
+        // Check if unprepared
+        $this->assertNull($profile->getSnapshot());
+
+        // Prepare and get Profile from first test case
+        $profile = Analyzer::profile("New profile has been created");
+
+        // Check return type
+        $this->assertInstanceOf(AnalysisProfile::class, $profile);
+        // Check if prepared
+        $this->assertIsArray($profile->getSnapshot());
     }
 
     public function testCanPopProfile(): void
     {
         // Check if Analyzer's Profiles size is 2
-        $this->assertCount(3, Analyzer::getProfiles());
+        $this->assertCount(2, Analyzer::getProfiles());
 
         $name = "Create profile by add";
         // Pop Profile with $name
         $profile = Analyzer::popProfile($name);
 
         // Check if Analyzer's Profiles size is 1
-        $this->assertCount(2, Analyzer::getProfiles());
+        $this->assertCount(1, Analyzer::getProfiles());
         // Check if the returned Profile's name is $name
         $this->assertSame($name, $profile->getName());
     }
@@ -68,10 +95,10 @@ class AnalyzerTest extends TestCase
     {
         $name = "Recently added";
         // Create new Profile
-        Analyzer::createProfile($name);
+        Analyzer::profile($name);
 
-        // Check if Analyzer's Profiles size is 2
-        $this->assertCount(3, Analyzer::getProfiles());
+        // Check if Analyzer's Profiles size is 3
+        $this->assertCount(2, Analyzer::getProfiles());
 
         // Clear Profiles
         Analyzer::clear();
@@ -100,16 +127,19 @@ class AnalyzerTest extends TestCase
         $this->assertFalse(Analyzer::profile("Default")->get($uid)->isClosed());
     }
 
+    public function testCanNotStopNonExistProfile(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("Profile not found");
+
+        // Stop recording with wrong profile
+        Analyzer::stopProfile("Wrong Profile", "anything");
+    }
+
     public function testCanStopProfileRecording(): void
     {
         // Start recording
         $uid = Analyzer::startProfile("Test stop", "Record that will be stopped");
-        // Stop recording with wrong profile
-        Analyzer::stopProfile("Wrong Profile", $uid);
-
-        // Check if "Test stop" Profile's record is not stopped
-        $this->assertFalse(Analyzer::profile("Test stop")->get($uid)->isClosed());
-
         // Stop
         Analyzer::stopProfile("Test stop", $uid);
         // Check if "Test stop" Profile's record is stopped

@@ -17,19 +17,14 @@ class AnalysisProfile implements IAProfile
     private string $name;
 
     /**
-     * @var int Profile's total memory usage
-     */
-    private int $usage;
-
-    /**
-     * @var array Memory footprints
-     */
-    private array $memFootprints;
-
-    /**
      * @var IARecord[] Records
      */
     private array $records;
+
+    /**
+     * @var array Snapshot before execution
+     */
+    private ?array $snapshot;
 
     // ***************************************
     // Public API
@@ -42,63 +37,29 @@ class AnalysisProfile implements IAProfile
     {
         $this->name = $name;
         $this->records = [];
-        $this->memFootprints = [];
-        $this->usage = 0;
+        $this->snapshot = null;
     }
 
     /**
-     * Create a Profile
+     * Prepare Profile
      */
     public static function create(string $name): AnalysisProfile
     {
-        // Get memory before instantiation
-        $localMem = memory_get_usage();
-        // Create instance
-        $output = new AnalysisProfile($name);
-        // Get memory usage
-        $output->usage = memory_get_usage() - $localMem;
-
-        return $output;
+        return new AnalysisProfile($name);
     }
 
     /**
-     * Get Profile's name
+     * Prepare Profile
      *
-     * @return string
+     * @param array|null $snapshot Set to null to make Profile unprepared
+     * @return $this
      */
-    public function getName(): string
+    public function prep(?array $snapshot): AnalysisProfile
     {
-        return $this->name;
-    }
+        // Save $snapshot
+        $this->snapshot = $snapshot;
 
-    /**
-     * Get Profile's memory usage
-     *
-     * @return int
-     */
-    public function getUsage(): int
-    {
-        return $this->usage;
-    }
-
-    /**
-     * Get memory footprints
-     *
-     * @return array
-     */
-    public function getMemoryFootprints(): array
-    {
-        return $this->memFootprints;
-    }
-
-    /**
-     * Get list of records
-     *
-     * @return array
-     */
-    public function getRecords(): array
-    {
-        return $this->records;
+        return $this;
     }
 
     /**
@@ -109,7 +70,12 @@ class AnalysisProfile implements IAProfile
      */
     public function write(string $name): string
     {
-        return $this->put(AnalysisRecord::open($name));
+        // Create and put Record in
+        $uid = $this->put(AnalysisRecord::open($name));
+        // Start recording
+        $this->records[$uid]->start();
+
+        return $uid;
     }
 
     /**
@@ -117,29 +83,25 @@ class AnalysisProfile implements IAProfile
      *
      * @param IARecord $record
      * @return string
+     * @throws \Exception
      */
     public function put(IARecord $record): string
     {
-        // Memory before execution
-        $initMemory = memory_get_usage();
+        // Check if Profile is prepared
+        if (is_null($this->snapshot)) {
+            throw new \Exception("Profile is not ready yet");
+        }
+
+        // Set Record's preSnapshot
+        $record->setPreSnapshot($this->snapshot);
         // Get Record's UID
         $uid = $record->getUID();
-        // Add temporary footprint
-        $this->memFootprints[$uid] = $initMemory;
         // Create new Record and push to list
         $this->records[$uid] = $record;
+        // Clear Profile's prep snapshot
+        $this->snapshot = null;
 
-        // Calculate used memory
-        $used = memory_get_usage() - $initMemory + $record->getUsage();
-        // Get execution memory usage
-        $this->usage += $used;
-        // Update footprint
-        $this->memFootprints[$uid] = $used;
-
-        // Start recording
-        $this->records[$uid]->start();
-
-        return $uid;;
+        return $uid;
     }
 
     /**
@@ -174,12 +136,38 @@ class AnalysisProfile implements IAProfile
         return $output;
     }
 
+    /**
+     * Get Profile's name
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * Current snapshot
+     *
+     * @return array|null
+     */
+    public function getSnapshot(): ?array
+    {
+        return $this->snapshot;
+    }
+
+    /**
+     * Get records
+     *
+     * @return AnalysisRecord[]
+     */
+    public function getRecords(): array
+    {
+        return $this->records;
+    }
+
     public function __toString(): string
     {
-        return "{" .
-            "name: " . $this->name . "," .
-            " usage: " . $this->usage . "," .
-            " footprints: " . json_encode($this->memFootprints) .
-            "}";
+        return "{name: $this->name}";
     }
 }

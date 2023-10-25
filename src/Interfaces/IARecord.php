@@ -22,10 +22,8 @@ interface IARecord
 
     /**
      * Close the Record.
-     * If $isShared is true, stop Record and return self.
-     * Else create another closed Record and return it
      *
-     * @param bool $isShared
+     * @param bool $isShared If $isShared is true, stop Record and return self. Else create another closed Record and return it
      * @return IARecord|null
      */
     public function close(bool $isShared = false): ?IARecord;
@@ -36,6 +34,50 @@ interface IARecord
      * @return IARecord|null
      */
     public function stop(): ?IARecord;
+
+    /**
+     * Get the preparation time to start and stop this Record
+     *
+     * @return float
+     */
+    public function prepTime(): float;
+
+    /**
+     * Get the diff between startTime and endTime
+     *
+     * @return float
+     */
+    public function diffTime(): float;
+
+    /**
+     * Get the preparation memory to start and stop this Record
+     *
+     * @return int
+     */
+    public function prepMem(): int;
+
+    /**
+     * Get the diff between startEmMem and endEmMem
+     *
+     * @return int
+     */
+    public function diffMem(): int;
+
+    /**
+     * Set pre snapshot and return
+     *
+     * @param array $snapshot
+     * @return IARecord
+     */
+    public function setPreSnapshot(array $snapshot): IARecord;
+
+    /**
+     * Set post snapshot and return
+     *
+     * @param array $snapshot
+     * @return IARecord
+     */
+    public function setPostSnapshot(array $snapshot): IARecord;
 
     /**
      * Get Record's UID
@@ -67,21 +109,12 @@ interface IARecord
      */
     public function getEndTime(): float;
 
-
-    /**
-     * Get real memory usage
-     *
-     * @return int
-     */
-    public function getRealMem(): int;
-
-
     /**
      * Get start emalloc() memory usage
      *
      * @return int
      */
-    public function getStartEmMem(): int;
+    public function getStartMem(): int;
 
 
     /**
@@ -89,32 +122,7 @@ interface IARecord
      *
      * @return int
      */
-    public function getEndEmMem(): int;
-
-
-    /**
-     * Get real peak memory
-     *
-     * @return int
-     */
-    public function getRealPeak(): int;
-
-
-    /**
-     * Get emalloc() peak memory
-     *
-     * @return int
-     */
-    public function getEmPeak(): int;
-
-
-    /**
-     * Get self memory usage
-     *
-     * @return int
-     */
-    public function getUsage(): int;
-
+    public function getEndMem(): int;
 
     /**
      * Check if Record is started
@@ -138,20 +146,4 @@ interface IARecord
      * @return bool
      */
     public function isShared(): bool;
-
-
-    /**
-     * Get the diff between startTime and endTime
-     *
-     * @return float
-     */
-    public function diffTime(): float;
-
-
-    /**
-     * Get the diff between startEmMem and endEmMem
-     *
-     * @return int
-     */
-    public function diffEmMem(): int;
 }
