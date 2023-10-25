@@ -51,6 +51,11 @@ class AnalysisRecord implements IARecord
      */
     private bool $isShared;
 
+    /**
+     * @var RecordRelation[] $relations Record's relation
+     */
+    private array $relations;
+
     // ***************************************
     // Public API
     // ***************************************
@@ -67,6 +72,7 @@ class AnalysisRecord implements IARecord
         $this->postSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->status = 0;
         $this->isShared = false;
+        $this->relations = [];
     }
 
     /**

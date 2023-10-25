@@ -340,8 +340,6 @@ class AnalysisRecordTest extends TestCase
         $obj = AnalysisRecord::open("Record")->start();
         // Create String
         $str2 = str_repeat(" ", 1024);
-        // memDiff = 0 if not closed
-        $this->assertEquals(0, $obj->diffMem());
         // Close Record
         $obj->close();
 
@@ -349,6 +347,20 @@ class AnalysisRecordTest extends TestCase
         $this->assertSame($end - $start, $obj->diffMem());
         // Just to make sure $str1 equals $str2 and both will be kept out of GC
         $this->assertSame($str1, $str2);
+    }
+
+    public function testReturnZeroMemDiffIfNotStopped(): void
+    {
+        // Open Record
+        $obj = AnalysisRecord::open("Record")->start();
+        // Create String
+        $str = str_repeat(" ", 1024);
+        // memDiff = 0 if not closed
+        $this->assertEquals(0, $obj->diffMem());
+        // Close Record
+        $obj->close();
+
+        $this->assertIsString($str);
     }
 
     public function testCanExcludePreStartPreparationMemOutOfMemDiff(): void

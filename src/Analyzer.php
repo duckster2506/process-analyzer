@@ -176,7 +176,7 @@ class Analyzer
     public static function startProfile(string $profileName, ?string $title = null): string
     {
         // Start recording
-        return self::profile($profileName)->write(static::getTitle($title));
+        return self::profile($profileName)->start(static::getTitle($title))->getUID();
     }
 
     /**

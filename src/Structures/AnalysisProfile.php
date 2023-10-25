@@ -2,8 +2,10 @@
 
 namespace Duckster\Analyzer\Structures;
 
+use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
+use Exception;
 
 class AnalysisProfile implements IAProfile
 {
@@ -43,7 +45,7 @@ class AnalysisProfile implements IAProfile
     /**
      * Prepare Profile
      */
-    public static function create(string $name): AnalysisProfile
+    public static function create(string $name): IAProfile
     {
         return new AnalysisProfile($name);
     }
@@ -54,7 +56,7 @@ class AnalysisProfile implements IAProfile
      * @param array|null $snapshot Set to null to make Profile unprepared
      * @return $this
      */
-    public function prep(?array $snapshot): AnalysisProfile
+    public function prep(?array $snapshot): IAProfile
     {
         // Save $snapshot
         $this->snapshot = $snapshot;
@@ -66,42 +68,39 @@ class AnalysisProfile implements IAProfile
      * Write a Record and return Record's UID
      *
      * @param string $name
-     * @return string
+     * @return IARecord
+     * @throws Exception
      */
-    public function write(string $name): string
+    public function start(string $name): IARecord
     {
-        // Create and put Record in
-        $uid = $this->put(AnalysisRecord::open($name));
-        // Start recording
-        $this->records[$uid]->start();
+        // Create and put Record to list
+        $record = $this->put(AnalysisRecord::open($name));
 
-        return $uid;
+        return $record->start();
     }
 
     /**
      * Put a Record into Profile. Replace Record if it's UID is already exists
      *
      * @param IARecord $record
-     * @return string
-     * @throws \Exception
+     * @return IARecord
+     * @throws Exception
      */
-    public function put(IARecord $record): string
+    public function put(IARecord $record): IARecord
     {
         // Check if Profile is prepared
         if (is_null($this->snapshot)) {
-            throw new \Exception("Profile is not ready yet");
+            throw new Exception("Profile is not ready yet");
         }
 
         // Set Record's preSnapshot
         $record->setPreSnapshot($this->snapshot);
-        // Get Record's UID
-        $uid = $record->getUID();
         // Create new Record and push to list
-        $this->records[$uid] = $record;
+        $this->records[$record->getUID()] = $record;
         // Clear Profile's prep snapshot
         $this->snapshot = null;
 
-        return $uid;
+        return $record;
     }
 
     /**

@@ -49,7 +49,7 @@ class AnalysisProfileTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage("Profile is not ready yet");
 
-        AnalysisProfile::create("Unprepared")->write("Hello");
+        AnalysisProfile::create("Unprepared")->start("Hello");
     }
 
     public function testCanWriteRecordWithCorrectName(): void
@@ -63,16 +63,18 @@ class AnalysisProfileTest extends TestCase
         $this->assertEmpty($obj->getRecords());
 
         // Write a Record
-        $uid = $obj->write("New record");
+        $record = $obj->start("New record");
 
-        // Type of $uid
-        $this->assertIsString($uid);
+        // Type of $record
+        $this->assertInstanceOf(AnalysisRecord::class, $record);
         // Records size is now 1
         $this->assertCount(1, $obj->getRecords());
         // Check Record's name
-        $this->assertSame("New record", $obj->get($uid)->getName());
+        $this->assertSame("New record", $record->getName());
         // Check Record's preSnapshot
-        $this->assertSame($snapshot, $obj->get($uid)->getPreSnapshot());
+        $this->assertSame($snapshot, $record->getPreSnapshot());
+        // Check Record's uis
+        $this->assertSame($record, $obj->get($record->getUID()));
     }
 
     public function testCanWriteRecords(): void
@@ -86,14 +88,14 @@ class AnalysisProfileTest extends TestCase
             // Get Record's name
             $recordName = "Record " . $i;
             // Write a Record
-            $uid = $obj->prep(Analyzer::takeSnapshot())->write($recordName);
+            $record = $obj->prep(Analyzer::takeSnapshot())->start($recordName);
 
-            // Type of $uid
-            $this->assertIsString($uid);
+            // Type of $record
+            $this->assertInstanceOf(AnalysisRecord::class, $record);
             // Records size is now 1
             $this->assertCount($i + 1, $obj->getRecords());
             // Check Record's name
-            $this->assertSame($recordName, $obj->get($uid)->getName());
+            $this->assertSame($recordName, $record->getName());
         }
     }
 
@@ -102,7 +104,7 @@ class AnalysisProfileTest extends TestCase
         // Create instance
         $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
         // Write a Record
-        $uid = $obj->write("Record");
+        $uid = $obj->start("Record")->getUID();
 
         // Check if list of Records has key with value of [$uid]
         $this->assertArrayHasKey($uid, $obj->getRecords());
@@ -121,24 +123,22 @@ class AnalysisProfileTest extends TestCase
         $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
 
         // Write a Record
-        $uid = $obj->write("Record");
-        // Save the reference of Record
-        $ref = $obj->get($uid);
+        $record = $obj->start("Record");
 
         // Since $record is created recently, check if startTime is not 0
-        $this->assertNotEquals(0.0, $obj->get($uid)->getStartTime());
+        $this->assertNotEquals(0.0, $record->getStartTime());
         // Since $record is created recently, check if endTime is 0
-        $this->assertEquals(0.0, $obj->get($uid)->getEndTime());
+        $this->assertEquals(0.0, $record->getEndTime());
 
         // Sleep for 1s
         sleep(1);
         // Close
-        $closed = $obj->stop($uid);
+        $closed = $obj->stop($record->getUID());
 
         // Since $record is stopped recently, check if endTime is not 0
-        $this->assertNotEquals(0.0, $obj->get($uid)->getEndTime());
+        $this->assertNotEquals(0.0, $record->getEndTime());
         // Check if the closed one is still the same one
-        $this->assertSame($ref, $obj->get($uid));
+        $this->assertSame($record, $obj->get($record->getUID()));
 
 
         // Check isClosed flag
@@ -150,9 +150,9 @@ class AnalysisProfileTest extends TestCase
         // Create instance
         $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
         // Write a Record
-        $uid = $obj->write("Record");
+        $record = $obj->start("Record");
         // Close
-        $closed = $obj->stop($uid);
+        $closed = $obj->stop($record->getUID());
 
         // Check if $this->stop() return a AnalysisRecord
         $this->assertInstanceOf(AnalysisRecord::class, $closed);
