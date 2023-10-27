@@ -15,28 +15,6 @@ interface IAProfile
     public static function create(string $name): IAProfile;
 
     /**
-     * Prepare Profile
-     *
-     * @param array|null $snapshot
-     * @return IAProfile
-     */
-    public function prep(?array $snapshot): IAProfile;
-
-    /**
-     * Get Profile's name
-     *
-     * @return string
-     */
-    public function getName(): string;
-
-    /**
-     * Get current snapshot
-     *
-     * @return array
-     */
-    public function getSnapshot(): ?array;
-
-    /**
      * Put a Record into Profile. Replace Record if it's UID is already exists
      *
      * @param IARecord $record
@@ -53,20 +31,35 @@ interface IAProfile
     public function get(string $uid): ?IARecord;
 
     /**
-     * Start and get Record. Return null if close failed
+     * Start and get Record. Return null if start failed
      *
      * @param string $name
+     * @param IAProfile[] $activeProfiles
      * @return IARecord
      * @throws Exception
      */
-    public function start(string $name): IARecord;
+    public function start(IARecord $record, array $activeProfiles): IARecord;
 
     /**
-     * Close and get Record. Return null if close failed
+     * Close and get Record. Return null if stop failed
      *
      * @param string $uid
      * @return IARecord|null
      * @throws Exception
      */
     public function stop(string $uid): ?IARecord;
+
+    /**
+     * Get Profile's name
+     *
+     * @return string
+     */
+    public function getName(): string;
+
+    /**
+     * Check if Profile is active (has un-stopped Record)
+     *
+     * @return bool
+     */
+    public function isActive(): bool;
 }

@@ -2,6 +2,8 @@
 
 namespace Duckster\Analyzer\Interfaces;
 
+use Duckster\Analyzer\Structures\RecordRelation;
+
 interface IARecord
 {
     /**
@@ -21,19 +23,11 @@ interface IARecord
     public function start(): IARecord;
 
     /**
-     * Close the Record.
-     *
-     * @param bool $isShared If $isShared is true, stop Record and return self. Else create another closed Record and return it
-     * @return IARecord|null
-     */
-    public function close(bool $isShared = false): ?IARecord;
-
-    /**
-     * Stop recording (Close with $isShared is true)
+     * Stop recording.
      *
      * @return IARecord|null
      */
-    public function stop(): ?IARecord;
+    public function stop(): IARecord;
 
     /**
      * Get the preparation time to start and stop this Record
@@ -125,6 +119,13 @@ interface IARecord
     public function getEndMem(): int;
 
     /**
+     * Get relations
+     *
+     * @return RecordRelation[]
+     */
+    public function getRelations(): array;
+
+    /**
      * Check if Record is started
      *
      * @return bool
@@ -133,11 +134,11 @@ interface IARecord
 
 
     /**
-     * Check if Record is closed
+     * Check if Record is stopped
      *
      * @return bool
      */
-    public function isClosed(): bool;
+    public function isStopped(): bool;
 
 
     /**

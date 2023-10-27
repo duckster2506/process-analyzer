@@ -240,7 +240,7 @@ class Analyzer
      */
     public static function stopShared(IARecord $record): void
     {
-        $record->stop()->setPostSnapshot(self::takeSnapshot(false));
+        $record->stop(true)->setPostSnapshot(self::takeSnapshot(false));
     }
 
     /**
@@ -285,7 +285,7 @@ class Analyzer
      *
      * @return string
      */
-    protected static function getTitle(?string $title): string
+    public static function getTitle(?string $title): string
     {
         // Indicate if $title is null
         if (is_null($title)) {

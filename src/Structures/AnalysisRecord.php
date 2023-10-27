@@ -110,44 +110,58 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Close the Record
+     * Stop recording
      *
      * @param bool $isShared
      * @return AnalysisRecord|null
      */
-    public function close(bool $isShared = false): ?AnalysisRecord
+    public function stop(): AnalysisRecord
     {
         // Create snapshot
         $snapshot = Analyzer::takeSnapshot();
 
-        if ($this->status === 2) return null;
+        if ($this->status === 2) return $this;
 
         $output = $this;
-        // Indicate if one Profile is trying to close a shared Record
-        if (!$isShared && $this->isShared) {
-            $output = clone $this;
-            // Change UID
-            $output->uid = uniqid();
-            // Set as non-shared
-            $output->isShared = false;
-        }
-
         // Set status
         $output->status = 2;
         // Save end timestamp
         $output->endSnapshot = $snapshot;
+        // Check relations
+        $this->checkRelations();
 
         return $output;
     }
 
     /**
-     * Stop recording (Close with $isShared is true)
+     * Copy Record
      *
-     * @return IARecord|null
+     * @return AnalysisRecord
      */
-    public function stop(): ?IARecord
+    public function copy(): AnalysisRecord
     {
-        return $this->close(true);
+        $output = clone $this;
+
+        // Change UID
+        $output->uid = uniqid();
+        // Set as non-shared
+        $output->isShared = false;
+
+        // Clear relations
+        $output->relations = [];
+        // Iterate through each relation
+        foreach ($this->relations as $relation) {
+            // Create new Relation
+            $copiedRelation = new RecordRelation(...($relation->getOwner() === $this
+                ? [$output, $relation->getTarget()]
+                : [$relation->getOwner(), $output]));
+            // Set relation's type
+            if ($relation->isIntersect()) $copiedRelation->intersect();
+            // Add to clone list
+            $output->relations[] = $copiedRelation;
+        }
+
+        return $output;
     }
 
     /**
@@ -231,6 +245,21 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Establish a relation
+     *
+     * @param AnalysisRecord $record
+     * @return void
+     */
+    public function establishRelation(AnalysisRecord $record): void
+    {
+        // Create a Relation
+        $relation = new RecordRelation($this, $record);
+        // Add to relation list
+        $this->relations[] = $relation;
+        $record->relations[] = $relation;
+    }
+
+    /**
      * Get Record's UID
      *
      * @return string
@@ -291,6 +320,16 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Get relations
+     *
+     * @return RecordRelation[]
+     */
+    public function getRelations(): array
+    {
+        return $this->relations;
+    }
+
+    /**
      * Check if Record is started
      *
      * @return bool
@@ -301,11 +340,11 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Check if Record is closed
+     * Check if Record is stopped
      *
      * @return bool
      */
-    public function isClosed(): bool
+    public function isStopped(): bool
     {
         return $this->status === 2;
     }
@@ -347,7 +386,28 @@ class AnalysisRecord implements IARecord
             " endTime: " . $this->getEndTime() . "," .
             " startMem: " . $this->getStartMem() . " bytes," .
             " endMem: " . $this->getEndMem() . " bytes," .
-            " status: " . ($this->isStarted() ? "Started" : ($this->isClosed() ? "Closed" : "Pending")) .
+            " status: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Closed" : "Pending")) .
             "}";
+    }
+
+    // ***************************************
+    // Private API
+    // ***************************************
+
+    /**
+     * Iterate through each relation and intersect them if relation's target is stopped
+     *
+     * @return void
+     */
+    private function checkRelations(): void
+    {
+        // Iterate through each relation
+        foreach ($this->relations as $relation) {
+            // Check if $owner try to stop while $target is not stopped
+            if ($relation->getOwner() === $this && $relation->getTarget()->isStarted()) {
+                // Mark relation as intersect
+                $relation->intersect();
+            }
+        }
     }
 }

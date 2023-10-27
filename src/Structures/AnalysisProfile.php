@@ -2,7 +2,6 @@
 
 namespace Duckster\Analyzer\Structures;
 
-use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
 use Exception;
@@ -19,14 +18,14 @@ class AnalysisProfile implements IAProfile
     private string $name;
 
     /**
-     * @var IARecord[] Records
+     * @var AnalysisRecord[] Records
      */
     private array $records;
 
     /**
-     * @var array Snapshot before execution
+     * @var array Active Records
      */
-    private ?array $snapshot;
+    private array $activeIds;
 
     // ***************************************
     // Public API
@@ -39,42 +38,32 @@ class AnalysisProfile implements IAProfile
     {
         $this->name = $name;
         $this->records = [];
-        $this->snapshot = null;
+        $this->activeIds = [];
     }
 
     /**
      * Prepare Profile
      */
-    public static function create(string $name): IAProfile
+    public static function create(string $name): AnalysisProfile
     {
         return new AnalysisProfile($name);
     }
 
     /**
-     * Prepare Profile
-     *
-     * @param array|null $snapshot Set to null to make Profile unprepared
-     * @return $this
-     */
-    public function prep(?array $snapshot): IAProfile
-    {
-        // Save $snapshot
-        $this->snapshot = $snapshot;
-
-        return $this;
-    }
-
-    /**
      * Write a Record and return Record's UID
      *
-     * @param string $name
+     * @param IARecord $record
+     * @param AnalysisProfile[]|null $activeProfiles
      * @return IARecord
-     * @throws Exception
      */
-    public function start(string $name): IARecord
+    public function start(IARecord $record, ?array $activeProfiles = null): AnalysisRecord
     {
         // Create and put Record to list
-        $record = $this->put(AnalysisRecord::open($name));
+        $this->put($record);
+        // Setup $record relation
+        $this->setupRecordRelation($record, $activeProfiles);
+        // Add this Record to active list
+        $this->activeIds[$record->getUID()] = true;
 
         return $record->start();
     }
@@ -84,21 +73,11 @@ class AnalysisProfile implements IAProfile
      *
      * @param IARecord $record
      * @return IARecord
-     * @throws Exception
      */
     public function put(IARecord $record): IARecord
     {
-        // Check if Profile is prepared
-        if (is_null($this->snapshot)) {
-            throw new Exception("Profile is not ready yet");
-        }
-
-        // Set Record's preSnapshot
-        $record->setPreSnapshot($this->snapshot);
         // Create new Record and push to list
         $this->records[$record->getUID()] = $record;
-        // Clear Profile's prep snapshot
-        $this->snapshot = null;
 
         return $record;
     }
@@ -124,15 +103,26 @@ class AnalysisProfile implements IAProfile
     {
         // Get Record by UID
         $output = $this->records[$uid] ?? null;
-
         if (is_null($output)) return null;
 
-        // Close and get Record
-        $output = $output->close();
+        // Copy the Record if it's shared
+        if ($output->isShared()) $output = $output->copy();
         // Replace
-        $this->records[$uid] = $output;
+        $this->records[$uid] = $output->stop();
+        // Remove this out of active list
+        unset($this->activeIds[$uid]);
 
         return $output;
+    }
+
+    /**
+     * Check if Profile is active
+     *
+     * @return bool
+     */
+    public function isActive(): bool
+    {
+        return !empty($this->activeIds);
     }
 
     /**
@@ -143,16 +133,6 @@ class AnalysisProfile implements IAProfile
     public function getName(): string
     {
         return $this->name;
-    }
-
-    /**
-     * Current snapshot
-     *
-     * @return array|null
-     */
-    public function getSnapshot(): ?array
-    {
-        return $this->snapshot;
     }
 
     /**
@@ -168,5 +148,30 @@ class AnalysisProfile implements IAProfile
     public function __toString(): string
     {
         return "{name: $this->name}";
+    }
+
+    // ***************************************
+    // Private API
+    // ***************************************
+
+    /**
+     * Setup new Record's relation
+     *
+     * @param IARecord $record
+     * @param AnalysisProfile[]|null $activeProfiles
+     * @return void
+     */
+    private function setupRecordRelation(IARecord $record, ?array $activeProfiles = null): void
+    {
+        foreach ($activeProfiles ?? [$this] as $profile) {
+            // Iterate through each Profile's active Record
+            foreach ($profile->activeIds as $activeIds => $value) {
+                // Check if $activeIds exists in $records
+                if (array_key_exists($activeIds, $this->records)) {
+                    // Add $record to activeIds relation list
+                    $this->records[$activeIds]->establishRelation($record);
+                }
+            }
+        }
     }
 }

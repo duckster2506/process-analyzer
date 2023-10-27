@@ -19,144 +19,141 @@ class AnalysisProfileTest extends TestCase
         // Is data type correct
         $this->assertSame("New profile", $obj->getName());
         $this->assertIsArray($obj->getRecords());
-        $this->assertNull($obj->getSnapshot());
     }
 
-    public function testCanBePrepared(): void
+    public function testCanPutAndGetRecordById(): void
     {
         // Create instance
-        $obj = AnalysisProfile::create("New profile");
+        $profile = AnalysisProfile::create("Profile");
 
-        // Check if Profile's snapshot is null
-        $this->assertNull($obj->getSnapshot());
+        // Check $profile's record list size
+        $this->assertEmpty($profile->getRecords());
 
-        // Create snapshot
-        $snapshot = [
-            'time' => hrtime(true),
-            'mem' => memory_get_usage()
-        ];
-        // Prepare
-        $afterPrepare = $obj->prep($snapshot);
+        // Create a Record
+        $record = AnalysisRecord::open("Record to be putted");
+        // Put $record into $profile
+        $profile->put($record);
 
-        // Return AnalysisProfile
-        $this->assertInstanceOf(AnalysisProfile::class, $afterPrepare);
-        // Check getter
-        $this->assertSame($snapshot, $afterPrepare->getSnapshot());
+        // Check size
+        $this->assertCount(1, $profile->getRecords());
+        // Get the Record by id and check if it's $record
+        $this->assertSame($record, $profile->get($record->getUID()));
     }
 
-    public function testMustPrepareBeforeWrite(): void
+    public function testCanStartRecord(): void
     {
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage("Profile is not ready yet");
+        // Create Profile
+        $profile = AnalysisProfile::create("Profile");
+        // Create Record
+        $record = AnalysisRecord::open("Record to be started");
 
-        AnalysisProfile::create("Unprepared")->start("Hello");
-    }
+        // Check if Record is not started
+        $this->assertFalse($record->isStarted());
+        // Check $profile's record list size
+        $this->assertEmpty($profile->getRecords());
 
-    public function testCanWriteRecordWithCorrectName(): void
-    {
-        // Take snapshot
-        $snapshot = Analyzer::takeSnapshot();
-        // Create instance
-        $obj = AnalysisProfile::create("Profile")->prep($snapshot);
-
-        // Init Records size is 0
-        $this->assertEmpty($obj->getRecords());
-
-        // Write a Record
-        $record = $obj->start("New record");
+        // Start $record into $profile. By starting $record, we've put $record in $profile
+        $record = $profile->start(AnalysisRecord::open("Record to be started"));
 
         // Type of $record
         $this->assertInstanceOf(AnalysisRecord::class, $record);
         // Records size is now 1
-        $this->assertCount(1, $obj->getRecords());
-        // Check Record's name
-        $this->assertSame("New record", $record->getName());
-        // Check Record's preSnapshot
-        $this->assertSame($snapshot, $record->getPreSnapshot());
-        // Check Record's uis
-        $this->assertSame($record, $obj->get($record->getUID()));
+        $this->assertCount(1, $profile->getRecords());
+        // Check if Record is started
+        $this->assertTrue($record->isStarted());
+        // $profile will be considered active
+        $this->assertTrue($profile->isActive());
     }
 
-    public function testCanWriteRecords(): void
+    public function testCanStopRecord(): void
+    {
+        // Create Profile
+        $profile = AnalysisProfile::create("Profile");
+        // Create Record
+        $record = AnalysisRecord::open("Record to be started");
+
+        // Check if Record is not started or stopped
+        $this->assertFalse($record->isStarted());
+        $this->assertFalse($record->isStopped());
+
+        // Start $record into $profile. By starting $record, we've put $record in $profile
+        $record = $profile->start(AnalysisRecord::open("Record to be started"));
+
+        // Type of $record
+        $this->assertInstanceOf(AnalysisRecord::class, $record);
+        // Check if Record is started
+        $this->assertTrue($record->isStarted());
+
+        // Stop $record
+        $profile->stop($record->getUID());
+
+        // Check if Record is stopped
+        $this->assertTrue($record->isStopped());
+        // $profile will be considered inactive
+        $this->assertFalse($profile->isActive());
+    }
+
+    public function testCanStopSharedRecord(): void
+    {
+        // Create Profile
+        $profile = AnalysisProfile::create("Profile");
+        // Create Record
+        $sharedRecord = AnalysisRecord::open("Shared record", true);
+
+        // Check if Record is not started or stopped
+        $this->assertFalse($sharedRecord->isStarted());
+        $this->assertFalse($sharedRecord->isStopped());
+
+        // Starting a shared Record will be the same as starting a non-shared Record
+        $afterStart = $profile->start($sharedRecord);
+
+        // It still the same Record
+        $this->assertSame($sharedRecord, $afterStart);
+        // Check if Record is started
+        $this->assertTrue($sharedRecord->isStarted());
+
+        // Stop $record
+        $afterStop = $profile->stop($sharedRecord->getUID());
+
+        // The returned Record will be different
+        $this->assertNotSame($sharedRecord, $afterStop);
+        // The returned will be considered stopped
+        $this->assertTrue($afterStop->isStopped());
+        // The original will still be started
+        $this->assertTrue($sharedRecord->isStarted());
+        // $profile will be considered inactive
+        $this->assertFalse($profile->isActive());
+    }
+
+    public function testCanStartAndStopRecords(): void
     {
         // Create instance
-        $obj = AnalysisProfile::create("Profile");
+        $profile = AnalysisProfile::create("Profile");
         // Init Records size is 0
-        $this->assertEmpty($obj->getRecords());
+        $this->assertEmpty($profile->getRecords());
 
         for ($i = 0; $i < 100; $i++) {
             // Get Record's name
             $recordName = "Record " . $i;
-            // Write a Record
-            $record = $obj->prep(Analyzer::takeSnapshot())->start($recordName);
+            // Create Record
+            $record = AnalysisRecord::open($recordName);
 
-            // Type of $record
-            $this->assertInstanceOf(AnalysisRecord::class, $record);
-            // Records size is now 1
-            $this->assertCount($i + 1, $obj->getRecords());
-            // Check Record's name
-            $this->assertSame($recordName, $record->getName());
+            // Check if Record is not started
+            $this->assertFalse($record->isStarted());
+
+            // Start $record into $profile. By starting $record, we've put $record in $profile
+            $record = $profile->start(AnalysisRecord::open($recordName));
+
+            // Check if Record is started
+            $this->assertTrue($record->isStarted());
+
+            $profile->stop($record->getUID());
+
+            // Check if Record is started
+            $this->assertTrue($record->isStopped());
         }
-    }
 
-    public function testCanBeGottenByUid(): void
-    {
-        // Create instance
-        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
-        // Write a Record
-        $uid = $obj->start("Record")->getUID();
-
-        // Check if list of Records has key with value of [$uid]
-        $this->assertArrayHasKey($uid, $obj->getRecords());
-        // Check if both getting method point to same object
-        $this->assertSame($obj->get($uid), $obj->getRecords()[$uid]);
-        // Check if Record's UID is $uid
-        $this->assertSame($uid, $obj->get($uid)->getUID());
-
-        // Check return null if non-exist
-        $this->assertNull($obj->get("123456789987654321"));
-    }
-
-    public function testCanCloseRecord(): void
-    {
-        // Create instance
-        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
-
-        // Write a Record
-        $record = $obj->start("Record");
-
-        // Since $record is created recently, check if startTime is not 0
-        $this->assertNotEquals(0.0, $record->getStartTime());
-        // Since $record is created recently, check if endTime is 0
-        $this->assertEquals(0.0, $record->getEndTime());
-
-        // Sleep for 1s
-        sleep(1);
-        // Close
-        $closed = $obj->stop($record->getUID());
-
-        // Since $record is stopped recently, check if endTime is not 0
-        $this->assertNotEquals(0.0, $record->getEndTime());
-        // Check if the closed one is still the same one
-        $this->assertSame($record, $obj->get($record->getUID()));
-
-
-        // Check isClosed flag
-        $this->assertTrue($closed->isClosed());
-    }
-
-    public function testCanReturnRecordAfterClose(): void
-    {
-        // Create instance
-        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
-        // Write a Record
-        $record = $obj->start("Record");
-        // Close
-        $closed = $obj->stop($record->getUID());
-
-        // Check if $this->stop() return a AnalysisRecord
-        $this->assertInstanceOf(AnalysisRecord::class, $closed);
-        // Check if $this->stop() some non-exist UID will return null
-        $this->assertNull($obj->stop("123546879987654321"));
+        // Init Records size is 100
+        $this->assertCount(100, $profile->getRecords());
     }
 }
