@@ -4,7 +4,6 @@ namespace Duckster\Analyzer;
 
 use Duckster\Analyzer\Interfaces\Printer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
 
 class AnalysisPrinter implements Printer
 {
@@ -33,13 +32,19 @@ class AnalysisPrinter implements Printer
         // Hook before convert
         $this->onBeforeConvert($profile);
 
-        
+
     }
-//┌──────────┬────────────────────┐
-//│Zend      │Framework           │
-//│──────────│────────────────────│
-//│Zend      │Framework           │
-//└──────────┴────────────────────┘
+//    ┌──────────┬────────────────────┐
+//    │Zend      │Framework           │
+//    │──────────│────────────────────│
+//    │Zend      │Framework           │
+//    └──────────┴────────────────────┘
+
+//    +----------+--------------------+
+//    |Zend      |Framework           |
+//    |----------|--------------------|
+//    |Zend      |Framework           |
+//    +----------+--------------------+
     // ***************************************
     // Private API
     // ***************************************
@@ -54,7 +59,6 @@ class AnalysisPrinter implements Printer
     {
         // Check if allow to hook
         if ($this->hook) {
-
             if (method_exists($this, "onProfileBeforeConvert")) {
                 // Hook: beforePrint for AnalysisProfile
                 $this->onProfileBeforeConvert($profile);

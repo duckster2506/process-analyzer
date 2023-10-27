@@ -37,7 +37,7 @@ interface IARecord
     public function prepTime(): float;
 
     /**
-     * Get the diff between startTime and endTime
+     * Get the diff between startTime and stopTime
      *
      * @return float
      */
@@ -51,7 +51,7 @@ interface IARecord
     public function prepMem(): int;
 
     /**
-     * Get the diff between startEmMem and endEmMem
+     * Get the diff between startEmMem and stopEmMem
      *
      * @return int
      */
@@ -63,7 +63,7 @@ interface IARecord
      * @param array $snapshot
      * @return IARecord
      */
-    public function setPreSnapshot(array $snapshot): IARecord;
+    public function setPreStartSnapshot(array $snapshot): IARecord;
 
     /**
      * Set post snapshot and return
@@ -71,7 +71,7 @@ interface IARecord
      * @param array $snapshot
      * @return IARecord
      */
-    public function setPostSnapshot(array $snapshot): IARecord;
+    public function setPreStopSnapshot(array $snapshot): IARecord;
 
     /**
      * Get Record's UID
@@ -97,11 +97,11 @@ interface IARecord
 
 
     /**
-     * Get endTime timestamp
+     * Get stopTime timestamp
      *
      * @return float
      */
-    public function getEndTime(): float;
+    public function getStopTime(): float;
 
     /**
      * Get start emalloc() memory usage
@@ -112,11 +112,11 @@ interface IARecord
 
 
     /**
-     * Get end emalloc() memory usage
+     * Get stop emalloc() memory usage
      *
      * @return int
      */
-    public function getEndMem(): int;
+    public function getStopMem(): int;
 
     /**
      * Get relations

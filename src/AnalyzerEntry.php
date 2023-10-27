@@ -2,10 +2,9 @@
 
 namespace Duckster\Analyzer;
 
-use Duckster\Analyzer\Interfaces\IARecord;
+use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
-use Exception;
 
 class AnalyzerEntry
 {
@@ -14,33 +13,61 @@ class AnalyzerEntry
     // ***************************************
 
     /**
-     * @var AnalysisProfile Entry's Profile
+     * @var array Pre snapshot
      */
-    private AnalysisProfile $profile;
+    private array $snapshot;
 
     /**
-     * @var AnalysisRecord Entry's Record
+     * @var IAProfile Entry's Profile
      */
-    private AnalysisRecord $record;
+    private IAProfile $profile;
 
     // ***************************************
     // Public API
     // ***************************************
 
+    public function __construct(array $snapshot, IAProfile $profile)
+    {
+        $this->snapshot = $snapshot;
+        $this->profile = $profile;
+    }
+
     /**
-     * Get Profiles
+     * Start recording
      *
      * @param string|null $title
-     * @return IARecord
+     * @return string
      */
-    public function start(?string $title = null): IARecord
+    public function start(?string $title = null): string
     {
-        // Create a Record
-        $this->record = AnalysisRecord::open(Analyzer::getTitle($title));
-        // Get Analyzer's active Profile
-        $activeProfile = array_filter(Analyzer::getProfiles(), [AnalysisProfile::class, 'isActive']);
+        // Create a Record and set pre snapshot
+        $record = AnalysisRecord::open(Analyzer::getTitle($title))->setPreStartSnapshot($this->snapshot);
+
+        // Get Analyzer's Profile
+        $activeProfile = Analyzer::getProfiles();
+        if (method_exists(AnalysisProfile::class, 'isActive')) {
+            // Filter active Profile only
+            $activeProfile = array_filter(Analyzer::getProfiles(), [AnalysisProfile::class, 'isActive']);
+        }
 
         // Add Record to Profile and start recording
-        return $this->profile->start($this->record, $activeProfile);
+        return $this->profile->start($record, $activeProfile)->getUID();
+    }
+
+    /**
+     * Stop recording. Return true if success. Else, return false
+     *
+     * @param string|null $uid If provided, stop the Record with corresponding UID. Else, stop the last Record in Profile
+     * @return bool
+     */
+    public function stop(?string $uid = null): void
+    {
+        // Check if $uid = null
+        if (is_null($uid)) {
+            $uid = array_key_last($this->profile->getRecords());
+        }
+
+        // Stop
+        $this->profile->stop($uid);
     }
 }

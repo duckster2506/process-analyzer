@@ -50,7 +50,34 @@ class AnalysisProfile implements IAProfile
     }
 
     /**
-     * Write a Record and return Record's UID
+     * Setup new Record's relation
+     *
+     * @param IARecord $record
+     * @param AnalysisProfile[] $profiles
+     * @return void
+     */
+    public static function setupRecordRelation(IARecord $record, array $profiles): void
+    {
+        foreach ($profiles as $profile) {
+            // Iterate through each Profile's active Record
+            foreach ($profile->activeIds as $activeId => $value) {
+                // Check if $activeId exists in $records
+                if (array_key_exists($activeId, $profile->records)) {
+                    // Check if the Record with $activeId is actually stopped
+                    if ($profile->records[$activeId]->isStopped()) {
+                        // Remove $activeId from $activeIds (use to take care shared Record)
+                        unset($profile->activeIds[$activeId]);
+                    } else {
+                        // Add $record to activeIds relation list
+                        $profile->records[$activeId]->establishRelation($record);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Put and start a Record
      *
      * @param IARecord $record
      * @param AnalysisProfile[]|null $activeProfiles
@@ -58,10 +85,25 @@ class AnalysisProfile implements IAProfile
      */
     public function start(IARecord $record, ?array $activeProfiles = null): AnalysisRecord
     {
-        // Create and put Record to list
-        $this->put($record);
+        // Create and put Record to list and start
+        return $this->startByUID($this->put($record)->getUID());
+    }
+
+    /**
+     * Start by UID
+     *
+     * @param string $uid
+     * @param AnalysisProfile[]|null $activeProfiles
+     * @return AnalysisRecord|null
+     */
+    public function startByUID(string $uid, ?array $activeProfiles = null): ?AnalysisRecord
+    {
+        // Get $record
+        $record = $this->get($uid);
+
+        if (is_null($record)) return null;
         // Setup $record relation
-        $this->setupRecordRelation($record, $activeProfiles);
+        static::setupRecordRelation($record, $activeProfiles ?? [$this]);
         // Add this Record to active list
         $this->activeIds[$record->getUID()] = true;
 
@@ -105,12 +147,12 @@ class AnalysisProfile implements IAProfile
         $output = $this->records[$uid] ?? null;
         if (is_null($output)) return null;
 
-        // Copy the Record if it's shared
-        if ($output->isShared()) $output = $output->copy();
-        // Replace
-        $this->records[$uid] = $output->stop();
         // Remove this out of active list
         unset($this->activeIds[$uid]);
+        // Branch the Record if it's shared
+        if ($output->isShared()) $output = $output->branch();
+        // Replace
+        $this->records[$uid] = $output->stop();
 
         return $output;
     }
@@ -148,30 +190,5 @@ class AnalysisProfile implements IAProfile
     public function __toString(): string
     {
         return "{name: $this->name}";
-    }
-
-    // ***************************************
-    // Private API
-    // ***************************************
-
-    /**
-     * Setup new Record's relation
-     *
-     * @param IARecord $record
-     * @param AnalysisProfile[]|null $activeProfiles
-     * @return void
-     */
-    private function setupRecordRelation(IARecord $record, ?array $activeProfiles = null): void
-    {
-        foreach ($activeProfiles ?? [$this] as $profile) {
-            // Iterate through each Profile's active Record
-            foreach ($profile->activeIds as $activeIds => $value) {
-                // Check if $activeIds exists in $records
-                if (array_key_exists($activeIds, $this->records)) {
-                    // Add $record to activeIds relation list
-                    $this->records[$activeIds]->establishRelation($record);
-                }
-            }
-        }
     }
 }

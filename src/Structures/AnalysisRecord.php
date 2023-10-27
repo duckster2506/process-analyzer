@@ -22,24 +22,24 @@ class AnalysisRecord implements IARecord
     private string $name;
 
     /**
-     * @var float Mark start of preparation (pre execution) before start of recording
+     * @var array Mark preparation before start of recording
      */
-    private array $preSnapshot;
+    private array $preStartSnapshot;
 
     /**
-     * @var float Mark start of recording
+     * @var array Mark start of recording
      */
     private array $startSnapshot;
 
     /**
-     * @var float Mark end of recording
+     * @var array Mark preparation before stop of recording
      */
-    private array $endSnapshot;
+    private array $preStopSnapshot;
 
     /**
-     * @var array Mark end of preparation (post execution) after end of recording
+     * @var array Mark stop of recording
      */
-    private array $postSnapshot;
+    private array $stopSnapshot;
 
     /**
      * @var int Record status
@@ -66,10 +66,10 @@ class AnalysisRecord implements IARecord
     public function __construct(string $name)
     {
         $this->name = $name;
-        $this->preSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->preStartSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->startSnapshot = ['time' => 0.0, 'mem' => 0];
-        $this->endSnapshot = ['time' => 0.0, 'mem' => 0];
-        $this->postSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->preStopSnapshot = ['time' => 0.0, 'mem' => 0];
+        $this->stopSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->status = 0;
         $this->isShared = false;
         $this->relations = [];
@@ -112,33 +112,35 @@ class AnalysisRecord implements IARecord
     /**
      * Stop recording
      *
-     * @param bool $isShared
-     * @return AnalysisRecord|null
+     * @return AnalysisRecord
      */
     public function stop(): AnalysisRecord
     {
-        // Create snapshot
-        $snapshot = Analyzer::takeSnapshot();
-
+        // Get local pre stop snapshot
+        $preStopSnapshot = Analyzer::takeSnapshot();
         if ($this->status === 2) return $this;
 
-        $output = $this;
+        // Check if preStopSnapshot is set
+        if ($this->preStopSnapshot['time'] === 0.0) {
+            $this->preStopSnapshot = $preStopSnapshot;
+        }
+
         // Set status
-        $output->status = 2;
-        // Save end timestamp
-        $output->endSnapshot = $snapshot;
+        $this->status = 2;
         // Check relations
         $this->checkRelations();
+        // Save stop timestamp
+        $this->stopSnapshot = Analyzer::takeSnapshot(false);
 
-        return $output;
+        return $this;
     }
 
     /**
-     * Copy Record
+     * Branch Record
      *
      * @return AnalysisRecord
      */
-    public function copy(): AnalysisRecord
+    public function branch(): AnalysisRecord
     {
         $output = clone $this;
 
@@ -152,9 +154,7 @@ class AnalysisRecord implements IARecord
         // Iterate through each relation
         foreach ($this->relations as $relation) {
             // Create new Relation
-            $copiedRelation = new RecordRelation(...($relation->getOwner() === $this
-                ? [$output, $relation->getTarget()]
-                : [$relation->getOwner(), $output]));
+            $copiedRelation = new RecordRelation($relation->getOwner(), $relation->getTarget());
             // Set relation's type
             if ($relation->isIntersect()) $copiedRelation->intersect();
             // Add to clone list
@@ -172,9 +172,9 @@ class AnalysisRecord implements IARecord
     public function prepTime(): float
     {
         // Get the preparation time before start recording
-        $preTime = ($this->startSnapshot['time'] ?? 0.0) - ($this->preSnapshot['time'] ?? 0.0);
+        $preTime = ($this->startSnapshot['time'] ?? 0.0) - ($this->preStartSnapshot['time'] ?? 0.0);
         // Get the preparation time after stop recording
-        $postTime = ($this->postSnapshot['time'] ?? 0.0) - ($this->endSnapshot['time'] ?? 0.0);
+        $postTime = ($this->stopSnapshot['time'] ?? 0.0) - ($this->preStopSnapshot['time'] ?? 0.0);
 
         return $preTime + $postTime;
     }
@@ -186,9 +186,11 @@ class AnalysisRecord implements IARecord
      */
     public function diffTime(): float
     {
-        return ($this->startSnapshot['time'] === 0.0 || $this->endSnapshot['time'] === 0.0)
-            ? 0.0
-            : $this->endSnapshot['time'] - $this->startSnapshot['time'];
+        if ($this->startSnapshot['time'] === 0.0 || $this->stopSnapshot['time'] === 0.0) {
+            return 0.0;
+        }
+
+        return $this->preStopSnapshot['time'] - $this->startSnapshot['time'];
     }
 
     /**
@@ -199,9 +201,9 @@ class AnalysisRecord implements IARecord
     public function prepMem(): int
     {
         // Get the preparation memory before start recording
-        $preTime = ($this->startSnapshot['mem'] ?? 0) - ($this->preSnapshot['mem'] ?? 0);
+        $preTime = ($this->startSnapshot['mem'] ?? 0) - ($this->preStartSnapshot['mem'] ?? 0);
         // Get the preparation memory after stop recording
-        $postTime = ($this->postSnapshot['mem'] ?? 0) - ($this->endSnapshot['mem'] ?? 0);
+        $postTime = ($this->stopSnapshot['mem'] ?? 0) - ($this->preStopSnapshot['mem'] ?? 0);
 
         return $preTime + $postTime;
     }
@@ -213,33 +215,35 @@ class AnalysisRecord implements IARecord
      */
     public function diffMem(): int
     {
-        return ($this->startSnapshot['mem'] === 0 || $this->endSnapshot['mem'] === 0)
-            ? 0
-            : $this->endSnapshot['mem'] - $this->startSnapshot['mem'];
+        if ($this->startSnapshot['mem'] === 0 || $this->stopSnapshot['mem'] === 0) {
+            return 0;
+        }
+
+        return $this->preStopSnapshot['mem'] - $this->startSnapshot['mem'];
     }
 
     /**
-     * Set pre snapshot and return self
+     * Set pre start snapshot and return self
      *
      * @param array $snapshot
      * @return $this
      */
-    public function setPreSnapshot(array $snapshot): AnalysisRecord
+    public function setPreStartSnapshot(array $snapshot): AnalysisRecord
     {
-        $this->preSnapshot = $snapshot;
+        $this->preStartSnapshot = $snapshot;
 
         return $this;
     }
 
     /**
-     * Set post snapshot and return self
+     * Set pre stop snapshot and return self
      *
      * @param array $snapshot
      * @return $this
      */
-    public function setPostSnapshot(array $snapshot): AnalysisRecord
+    public function setPreStopSnapshot(array $snapshot): AnalysisRecord
     {
-        $this->postSnapshot = $snapshot;
+        $this->preStopSnapshot = $snapshot;
 
         return $this;
     }
@@ -290,13 +294,13 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Get endTime timestamp
+     * Get stopTime timestamp
      *
      * @return float
      */
-    public function getEndTime(): float
+    public function getStopTime(): float
     {
-        return $this->endSnapshot['time'] ?? 0.0;
+        return $this->stopSnapshot['time'] ?? 0.0;
     }
 
     /**
@@ -310,13 +314,13 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Get end emalloc() memory usage
+     * Get stop emalloc() memory usage
      *
      * @return int
      */
-    public function getEndMem(): int
+    public function getStopMem(): int
     {
-        return $this->endSnapshot['mem'] ?? 0;
+        return $this->stopSnapshot['mem'] ?? 0;
     }
 
     /**
@@ -364,29 +368,34 @@ class AnalysisRecord implements IARecord
      *
      * @return array
      */
-    public function getPreSnapshot(): array
+    public function getPreStartSnapshot(): array
     {
-        return $this->preSnapshot;
+        return $this->preStartSnapshot;
     }
 
     /**
-     * Get post end snapshot
+     * Get pre end snapshot
      *
      * @return array
      */
-    public function getPostSnapshot(): array
+    public function getPreStopSnapshot(): array
     {
-        return $this->postSnapshot;
+        return $this->preStopSnapshot;
     }
 
+    /**
+     * To string
+     *
+     * @return string
+     */
     public function __toString(): string
     {
         return "{" .
             "startTime: " . $this->getStartTime() . "," .
-            " endTime: " . $this->getEndTime() . "," .
+            " stopTime: " . $this->getStopTime() . "," .
             " startMem: " . $this->getStartMem() . " bytes," .
-            " endMem: " . $this->getEndMem() . " bytes," .
-            " status: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Closed" : "Pending")) .
+            " stopMem: " . $this->getStopMem() . " bytes," .
+            " status: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Stopped" : "Pending")) .
             "}";
     }
 

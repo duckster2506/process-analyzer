@@ -2,6 +2,7 @@
 
 namespace Duckster\Analyzer\Interfaces;
 
+use Duckster\Analyzer\Structures\AnalysisRecord;
 use Exception;
 
 interface IAProfile
@@ -33,10 +34,9 @@ interface IAProfile
     /**
      * Start and get Record. Return null if start failed
      *
-     * @param string $name
+     * @param IARecord $record
      * @param IAProfile[] $activeProfiles
      * @return IARecord
-     * @throws Exception
      */
     public function start(IARecord $record, array $activeProfiles): IARecord;
 
@@ -45,7 +45,6 @@ interface IAProfile
      *
      * @param string $uid
      * @return IARecord|null
-     * @throws Exception
      */
     public function stop(string $uid): ?IARecord;
 
@@ -55,6 +54,13 @@ interface IAProfile
      * @return string
      */
     public function getName(): string;
+
+    /**
+     * Get records
+     *
+     * @return AnalysisRecord[]
+     */
+    public function getRecords(): array;
 
     /**
      * Check if Profile is active (has un-stopped Record)
