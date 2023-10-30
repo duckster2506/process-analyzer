@@ -2,6 +2,7 @@
 
 namespace Duckster\Analyzer\Tests\Structures;
 
+use Duckster\Analyzer\AnalysisUtils;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
@@ -168,33 +169,6 @@ class AnalysisProfileTest extends TestCase
         $this->assertTrue($profile->isActive());
     }
 
-    public function testCanStartRecordByUid(): void
-    {
-        // Create Profile
-        $profile = AnalysisProfile::create("Profile");
-        // Create Record
-        $record = AnalysisRecord::open("Record to be started by UID");
-
-        // Check if Record is not started
-        $this->assertFalse($record->isStarted());
-        // Check $profile's record list size
-        $this->assertEmpty($profile->getRecords());
-
-        // Start $record into $profile. By starting $record, we've put $record in $profile
-        $record = $profile->put($record);
-        // Start by UID
-        $profile->startByUID($record->getUID());
-
-        // Type of $record
-        $this->assertInstanceOf(AnalysisRecord::class, $record);
-        // Records size is now 1
-        $this->assertCount(1, $profile->getRecords());
-        // Check if Record is started
-        $this->assertTrue($record->isStarted());
-        // $profile will be considered active
-        $this->assertTrue($profile->isActive());
-    }
-
     public function testCanStopRecord(): void
     {
         // Create Profile
@@ -219,38 +193,6 @@ class AnalysisProfileTest extends TestCase
 
         // Check if Record is stopped
         $this->assertTrue($record->isStopped());
-        // $profile will be considered inactive
-        $this->assertFalse($profile->isActive());
-    }
-
-    public function testCanStopSharedRecord(): void
-    {
-        // Create Profile
-        $profile = AnalysisProfile::create("Profile");
-        // Create Record
-        $sharedRecord = AnalysisRecord::open("Shared record", true);
-
-        // Check if Record is not started or stopped
-        $this->assertFalse($sharedRecord->isStarted());
-        $this->assertFalse($sharedRecord->isStopped());
-
-        // Starting a shared Record will be the same as starting a non-shared Record
-        $afterStart = $profile->start($sharedRecord);
-
-        // It still the same Record
-        $this->assertSame($sharedRecord, $afterStart);
-        // Check if Record is started
-        $this->assertTrue($sharedRecord->isStarted());
-
-        // Stop $record
-        $afterStop = $profile->stop($sharedRecord->getUID());
-
-        // The returned Record will be different
-        $this->assertNotSame($sharedRecord, $afterStop);
-        // The returned will be considered stopped
-        $this->assertTrue($afterStop->isStopped());
-        // The original will still be started
-        $this->assertTrue($sharedRecord->isStarted());
         // $profile will be considered inactive
         $this->assertFalse($profile->isActive());
     }
@@ -285,5 +227,31 @@ class AnalysisProfileTest extends TestCase
 
         // Init Records size is 100
         $this->assertCount(100, $profile->getRecords());
+    }
+
+    public function testCanGetLatestActiveRecord(): void
+    {
+        // Create Profile
+        $profile = AnalysisProfile::create("Profile");
+
+        // Return null if no Record is active
+        $this->assertNull($profile->getLatestActiveRecord());
+
+        // Create Record 1
+        $record1 = AnalysisRecord::open("Record 1");
+        // Create Record 2
+        $record2 = AnalysisRecord::open("Record 2");
+        // Start Record 2 then Record 1
+        $profile->start($record2);
+        $profile->start($record1);
+
+        // Latest active Record is Record 1
+        $this->assertSame($record1, $profile->getLatestActiveRecord());
+
+        // Stop Record 1
+        $profile->stop($record1->getUID());
+
+        // Latest active Record is now Record 2
+        $this->assertSame($record2, $profile->getLatestActiveRecord());
     }
 }

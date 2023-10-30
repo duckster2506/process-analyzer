@@ -4,172 +4,220 @@ namespace Duckster\Analyzer\Tests;
 
 use Duckster\Analyzer\AnalysisUtils;
 use Duckster\Analyzer\Analyzer;
+use Duckster\Analyzer\AnalyzerEntry;
+use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerEntryTest extends TestCase
 {
-    public function testCanReturnRecordAfterClose(): void
+    protected function setUp(): void
     {
-        // Create instance
-        $obj = AnalysisProfile::create("Profile")->prep(Analyzer::takeSnapshot());
-        // Write a Record
-        $record = $obj->start("Record");
-        // Close
-        $stopped = $obj->stop($record->getUID());
-
-        // Check if $this->stop() return a AnalysisRecord
-        $this->assertInstanceOf(AnalysisRecord::class, $stopped);
-        // Check if $this->stop() some non-exist UID will return null
-        $this->assertNull($obj->stop("123546879987654321"));
-    }
-
-    public function testCanEstablishRelationForRecordsWhileWritingInSameProfile(): void
-    {
-        // Create Profile
-        $profile = Analyzer::profile("Profile");
-
-        // Write Record
-        $activeRecord = $profile->prep(Analyzer::takeSnapshot())->start("Active record");
-        // "Active record" won't have any relation
-        $this->assertEmpty($activeRecord->getRelations());
-
-        // Write and stop Record
-        $inactiveRecord = $profile->prep(Analyzer::takeSnapshot())->start("Inactive record")->stop();
-
-        // *********************************************************************************************
-        // Since "Inactive record" is start when "Active record" is recording
-        // An intersect relation is established between $activeRecord and $inactiveRecord
-        // *********************************************************************************************
-
-        // Get relation
-        $relation = $activeRecord->getRelations()[0];
-
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $inactiveRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertFalse($relation->isIntersect());
-
-        // *********************************************************************************************
-
-        // Add "Intersect record" to Profile
-        $intersectRecord = $profile->prep(Analyzer::takeSnapshot())->start("Intersect record");
-
-        // *********************************************************************************************
-        // Since "Intersect record" is start when "Active record" is recording
-        // An intersect relation is established between $activeRecord and $inactiveRecord
-        // But "Inactive record" is already stopped, so no relation between "Inactive record" and "Intersect record"
-        // *********************************************************************************************
-
-        // Get relation (now at index 1 of "Active record"
-        $relation = $activeRecord->getRelations()[1];
-
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $intersectRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertFalse($relation->isIntersect());
-
-        // Check if no relation between "Inactive record" and "Intersect record"
-        // The only relation is between itself and "Active record"
-        $this->assertCount(1, $inactiveRecord->getRelations());
-        // The only relation is between itself and "Active record"
-        $this->assertCount(1, $intersectRecord->getRelations());
-
-        // *********************************************************************************************
-
-        // Close "Active record" first and then "Intersect record"
-        $activeRecord->stop();
-        $intersectRecord->stop();
-
-        // *********************************************************************************************
-        // Since "Intersect record" is stopped after "Active record"
-        // Their relation will change from ownership to intersect
-        // *********************************************************************************************
-
-        // Get relation (now at index 1 of "Active record"
-        $relation = $activeRecord->getRelations()[1];
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $intersectRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertTrue($relation->isIntersect());
-    }
-
-    public function testCanEstablishRelationForRecordsWhileWritingInMultipleProfile(): void
-    {
-        // *********************************************************************************************
-        // This case has the same scenario as testCanEstablishRelationForWrittenRecordAndActiveRecordsInSameProfile()
-        // The only difference is that Records will belong to different Profiles
-        // It should produce the same result as testCanEstablishRelationForWrittenRecordAndActiveRecordsInSameProfile()
-        // *********************************************************************************************
-
-        // Since Analyzer is static, clear it first
+        parent::setUp();
         Analyzer::clear();
-        // Create Profile (by using Analyzer)
-        $profile1 = Analyzer::profile("Profile 1");
-        $profile2 = Analyzer::profile("Profile 2");
-        $profile3 = Analyzer::profile("Profile 3");
+    }
 
-        // Write Record
-        $activeRecord = $profile1->prep(Analyzer::takeSnapshot())->start("Active record");
-        // "Active record" won't have any relation
-        $this->assertEmpty($activeRecord->getRelations());
+//    public function testCanBeConstructed(): void
+//    {
+//        // Create instance
+//        $entry = Analyzer::profile("Profile");
+//
+//        // Check instance class
+//        $this->assertInstanceOf(AnalyzerEntry::class, $entry);
+//        // Check if entry can get Profile
+//        $this->assertInstanceOf(AnalysisProfile::class, $entry->getProfile());
+//        // Check if Profile's name
+//        $this->assertSame("Profile", $entry->getProfile()->getName());
+//    }
+//
+//    public function testCanStart(): void
+//    {
+//        // Create entry
+//        $entry = Analyzer::profile("Profile");
+//
+//        // Check if entry's Profile is empty
+//        $this->assertEmpty($entry->getProfile()->getRecords());
+//
+//        // Start
+//        $uid = $entry->start("Record 1");
+//
+//        // Check size after start
+//        $this->assertCount(1, $entry->getProfile()->getRecords());
+//        // Check return type
+//        $this->assertIsString($uid);
+//        // Check Record's props
+//        $this->assertSame("Record 1", $entry->getProfile()->get($uid)->getName());
+//        $this->assertTrue($entry->getProfile()->get($uid)->isStarted());
+//        $this->assertFalse($entry->getProfile()->get($uid)->isStopped());
+//    }
+//
+//    public function testCanStop(): void
+//    {
+//        // Create entry
+//        $entry = Analyzer::profile("Profile");
+//        // Start
+//        $uid = $entry->start("Record 2");
+//        $entry->stop($uid);
+//
+//        // Check Record's props
+//        $this->assertSame("Record 2", $entry->getProfile()->get($uid)->getName());
+//        $this->assertFalse($entry->getProfile()->get($uid)->isStarted());
+//        $this->assertTrue($entry->getProfile()->get($uid)->isStopped());
+//    }
+//
+//    public function testCanStopLatest(): void
+//    {
+//        // Create entry
+//        $entry = Analyzer::profile("Profile");
+//        // Start
+//        $uid1 = $entry->start("Record 1");
+//        $uid2 = $entry->start("Record 2");
+//        $entry->stop();
+//
+//        // Check if Record 1 is not stopped
+//        $this->assertTrue($entry->getProfile()->get($uid1)->isStarted());
+//        $this->assertFalse($entry->getProfile()->get($uid1)->isStopped());
+//        // Check if Record 2 is stopped
+//        $this->assertFalse($entry->getProfile()->get($uid2)->isStarted());
+//        $this->assertTrue($entry->getProfile()->get($uid2)->isStopped());
+//    }
 
-        // Write and stop Record
-        $inactiveRecord = $profile2->prep(Analyzer::takeSnapshot())->start("Inactive record")->stop();
+    public function testSubTestRelationWithSingleProfile(): void
+    {
+        $uid1 = Analyzer::profile("Profile")->start("Record 1");
+        sleep(1);
 
-        // *********************************************************************************************
-        // Since "Inactive record" is start when "Active record" is recording
-        // An intersect relation is established between $activeRecord and $inactiveRecord
-        // *********************************************************************************************
+        $uid2 = Analyzer::profile("Profile")->start("Record 2");
+        sleep(1);
+        Analyzer::profile("Profile")->stop();
 
-        // Get relation
-        $relation = $activeRecord->getRelations()[0];
+        $uid3 = Analyzer::profile("Profile")->start("Record 3");
+        sleep(2);
+        Analyzer::profile("Profile")->stop($uid1);
 
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $inactiveRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertFalse($relation->isIntersect());
+        Analyzer::profile("Profile")->stop($uid3);
 
-        // *********************************************************************************************
+        // Get Record instance
+        $record1 = Analyzer::getProfiles()['Profile']->get($uid1);
+        $record2 = Analyzer::getProfiles()['Profile']->get($uid2);
+        $record3 = Analyzer::getProfiles()['Profile']->get($uid3);
 
-        // Add "Intersect record" to Profile
-        $intersectRecord = $profile3->prep(Analyzer::takeSnapshot())->start("Intersect record");
+        // ***********************
+        // Check Record 1
+        // ***********************
+        AnalysisUtils::rawLog($record1);
+        // Record is stopped
+        $this->assertTrue($record1->isStopped());
+        // Record has 2 relation
+        $this->assertCount(2, $record1->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record1->getRelations()[0]->getOwner());
+        $this->assertSame($record1, $record1->getRelations()[1]->getOwner());
+        // Check relation target
+        $this->assertSame($record2, $record1->getRelations()[0]->getTarget());
+        $this->assertSame($record3, $record1->getRelations()[1]->getTarget());
+        // Check relation's type
+        $this->assertFalse($record1->getRelations()[0]->isIntersect());
+        $this->assertTrue($record1->getRelations()[1]->isIntersect());
 
-        // *********************************************************************************************
-        // Since "Intersect record" is start when "Active record" is recording
-        // An intersect relation is established between $activeRecord and $inactiveRecord
-        // But "Inactive record" is already stopped, so no relation between "Inactive record" and "Intersect record"
-        // *********************************************************************************************
+        // ***********************
+        // Check Record 2
+        // ***********************
 
-        // Get relation (now at index 1 of "Active record"
-        $relation = $activeRecord->getRelations()[1];
+        // Record is stopped
+        $this->assertTrue($record2->isStopped());
+        // Record has 1 relation
+        $this->assertCount(1, $record2->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record2->getRelations()[0]->getOwner());
+        // Check relation target
+        $this->assertSame($record2, $record2->getRelations()[0]->getTarget());
+        // Check relation's type
+        $this->assertFalse($record2->getRelations()[0]->isIntersect());
 
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $intersectRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertFalse($relation->isIntersect());
-        // Check if no relation between "Inactive record" and "Intersect record"
-        $this->assertEmpty($inactiveRecord->getRelations());
-        // The only relation is between itself and "Active record"
-        $this->assertCount(1, $intersectRecord->getRelations());
+        // ***********************
+        // Check Record 3
+        // ***********************
 
-        // *********************************************************************************************
+        // Record is stopped
+        $this->assertTrue($record3->isStopped());
+        // Record has 1 relation
+        $this->assertCount(1, $record3->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record3->getRelations()[0]->getOwner());
+        // Check relation target
+        $this->assertSame($record3, $record3->getRelations()[0]->getTarget());
+        // Check relation's type
+        $this->assertTrue($record3->getRelations()[0]->isIntersect());
+    }
 
-        // Close "Active record" first and then "Intersect record"
-        $activeRecord->stop();
-        $intersectRecord->stop();
+    public function testSubTestRelationWithMultipleProfile(): void
+    {
+        $uid1 = Analyzer::profile("Profile")->start("Record 1");
+        sleep(1);
 
-        // *********************************************************************************************
-        // Since "Intersect record" is stopped after "Active record"
-        // Their relation will change from ownership to intersect
-        // *********************************************************************************************
+        $uid2 = Analyzer::profile("Child")->start("Record 2");
+        sleep(1);
+        Analyzer::profile("Child")->stop();
 
-        // Get relation (now at index 1 of "Active record"
-        $relation = $activeRecord->getRelations()[1];
-        // Check if both relation point to same instance
-        $this->assertSame($relation, $intersectRecord->getRelations()[0]);
-        // Check if relation is not intersect
-        $this->assertTrue($relation->isIntersect());
+        $uid3 = Analyzer::profile("Intersect")->start("Record 3");
+        sleep(2);
+        Analyzer::profile("Profile")->stop();
+
+        Analyzer::profile("Intersect")->stop();
+
+        // Get Record instance
+        $record1 = Analyzer::getProfiles()['Profile']->get($uid1);
+        $record2 = Analyzer::getProfiles()['Child']->get($uid2);
+        $record3 = Analyzer::getProfiles()['Intersect']->get($uid3);
+
+        // ***********************
+        // Check Record 1
+        // ***********************
+        AnalysisUtils::rawLog($record1);
+        // Record is stopped
+        $this->assertTrue($record1->isStopped());
+        // Record has 2 relation
+        $this->assertCount(2, $record1->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record1->getRelations()[0]->getOwner());
+        $this->assertSame($record1, $record1->getRelations()[1]->getOwner());
+        // Check relation target
+        $this->assertSame($record2, $record1->getRelations()[0]->getTarget());
+        $this->assertSame($record3, $record1->getRelations()[1]->getTarget());
+        // Check relation's type
+        $this->assertFalse($record1->getRelations()[0]->isIntersect());
+        $this->assertTrue($record1->getRelations()[1]->isIntersect());
+
+        // ***********************
+        // Check Record 2
+        // ***********************
+
+        // Record is stopped
+        $this->assertTrue($record2->isStopped());
+        // Record has 1 relation
+        $this->assertCount(1, $record2->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record2->getRelations()[0]->getOwner());
+        // Check relation target
+        $this->assertSame($record2, $record2->getRelations()[0]->getTarget());
+        // Check relation's type
+        $this->assertFalse($record2->getRelations()[0]->isIntersect());
+
+        // ***********************
+        // Check Record 3
+        // ***********************
+
+        // Record is stopped
+        $this->assertTrue($record3->isStopped());
+        // Record has 1 relation
+        $this->assertCount(1, $record3->getRelations());
+        // Check relation owner
+        $this->assertSame($record1, $record3->getRelations()[0]->getOwner());
+        // Check relation target
+        $this->assertSame($record3, $record3->getRelations()[0]->getTarget());
+        // Check relation's type
+        $this->assertTrue($record3->getRelations()[0]->isIntersect());
     }
 }

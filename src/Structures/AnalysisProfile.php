@@ -4,7 +4,7 @@ namespace Duckster\Analyzer\Structures;
 
 use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
-use Exception;
+use function Webmozart\Assert\Tests\StaticAnalysis\null;
 
 class AnalysisProfile implements IAProfile
 {
@@ -63,51 +63,11 @@ class AnalysisProfile implements IAProfile
             foreach ($profile->activeIds as $activeId => $value) {
                 // Check if $activeId exists in $records
                 if (array_key_exists($activeId, $profile->records)) {
-                    // Check if the Record with $activeId is actually stopped
-                    if ($profile->records[$activeId]->isStopped()) {
-                        // Remove $activeId from $activeIds (use to take care shared Record)
-                        unset($profile->activeIds[$activeId]);
-                    } else {
-                        // Add $record to activeIds relation list
-                        $profile->records[$activeId]->establishRelation($record);
-                    }
+                    // Add $record to activeIds relation list
+                    $profile->records[$activeId]->establishRelation($record);
                 }
             }
         }
-    }
-
-    /**
-     * Put and start a Record
-     *
-     * @param IARecord $record
-     * @param AnalysisProfile[]|null $activeProfiles
-     * @return IARecord
-     */
-    public function start(IARecord $record, ?array $activeProfiles = null): AnalysisRecord
-    {
-        // Create and put Record to list and start
-        return $this->startByUID($this->put($record)->getUID());
-    }
-
-    /**
-     * Start by UID
-     *
-     * @param string $uid
-     * @param AnalysisProfile[]|null $activeProfiles
-     * @return AnalysisRecord|null
-     */
-    public function startByUID(string $uid, ?array $activeProfiles = null): ?AnalysisRecord
-    {
-        // Get $record
-        $record = $this->get($uid);
-
-        if (is_null($record)) return null;
-        // Setup $record relation
-        static::setupRecordRelation($record, $activeProfiles ?? [$this]);
-        // Add this Record to active list
-        $this->activeIds[$record->getUID()] = true;
-
-        return $record->start();
     }
 
     /**
@@ -136,7 +96,26 @@ class AnalysisProfile implements IAProfile
     }
 
     /**
-     * Close and get record. Return null if close failed
+     * Put and start a Record
+     *
+     * @param IARecord $record
+     * @param AnalysisProfile[]|null $activeProfiles
+     * @return IARecord
+     */
+    public function start(IARecord $record, ?array $activeProfiles = null): IARecord
+    {
+        // Put $record into the list
+        $this->put($record);
+        // Setup $record relation
+        static::setupRecordRelation($record, $activeProfiles ?? [$this]);
+        // Add this Record to active list
+        $this->activeIds[$record->getUID()] = true;
+
+        return $record->start();
+    }
+
+    /**
+     * Stop and get record. Return null if stop failed
      *
      * @param string $uid
      * @return IARecord|null
@@ -146,16 +125,27 @@ class AnalysisProfile implements IAProfile
         // Get Record by UID
         $output = $this->records[$uid] ?? null;
         if (is_null($output)) return null;
-
         // Remove this out of active list
         unset($this->activeIds[$uid]);
-        // Branch the Record if it's shared
-        if ($output->isShared()) $output = $output->branch();
-        // Replace
-        $this->records[$uid] = $output->stop();
 
-        return $output;
+        // stop
+        return $output->stop();
     }
+
+    /**
+     * Get the latest active Record
+     *
+     * @return IARecord|null
+     */
+    public function getLatestActiveRecord(): ?IARecord
+    {
+        // Get key
+        $key = array_key_last($this->activeIds);
+        if (is_null($key)) return null;
+
+        return $this->records[$key];
+    }
+
 
     /**
      * Check if Profile is active

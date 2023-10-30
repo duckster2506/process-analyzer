@@ -2,6 +2,7 @@
 
 namespace Duckster\Analyzer;
 
+use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
@@ -39,7 +40,7 @@ class Analyzer
     // ***************************************
 
     /**
-     * @var AnalysisProfile[] Analyzer profiles
+     * @var IAProfile[] Analyzer profiles
      */
     private static array $profiles = [];
 
@@ -50,6 +51,7 @@ class Analyzer
     /**
      * Generate a snapshot
      *
+     * @param bool $beforeCreate
      * @return array
      */
     public static function takeSnapshot(bool $beforeCreate = true): array
@@ -71,7 +73,7 @@ class Analyzer
     /**
      * Get Profiles
      *
-     * @return AnalysisProfile[]
+     * @return IAProfile[]
      */
     public static function getProfiles(): array
     {
@@ -101,10 +103,10 @@ class Analyzer
     /**
      * Add a Profile. Return true if added successfully, else return false
      *
-     * @param AnalysisProfile $profile
+     * @param IAProfile $profile
      * @return bool
      */
-    public static function addProfile(AnalysisProfile $profile): bool
+    public static function addProfile(IAProfile $profile): bool
     {
         // Check if Profile exists
         if (self::hasProfile($profile->getName())) {
@@ -121,9 +123,9 @@ class Analyzer
      * Delete Profile. Return unprepared Profile if delete successfully, else return null
      *
      * @param string $name
-     * @return AnalysisProfile|null
+     * @return IAProfile|null
      */
-    public static function popProfile(string $name): ?AnalysisProfile
+    public static function popProfile(string $name): ?IAProfile
     {
         $output = null;
 
@@ -172,38 +174,6 @@ class Analyzer
     }
 
     /**
-     * Start recording using multiple Profile. Throw Exception if Profile(s) not exist
-     *
-     * @param array $profileNames
-     * @param string|null $title
-     * @return IARecord
-     */
-    public static function startShared(array $profileNames, ?string $title = null): IARecord
-    {
-        // Take a snapshot
-        $snapshot = self::takeSnapshot();
-        // Create a shared Record
-        $record = AnalysisRecord::open(static::getTitle($title), true)
-            ->setPreStartSnapshot($snapshot);
-
-        // Iterate through each Profile and put $record
-        foreach ($profileNames as $profileName) {
-            // Check if Profile is existing
-            if (!self::hasProfile($profileName)) {
-                // Create new Profile
-                self::$profiles[$profileName] = AnalysisProfile::create($profileName);
-            }
-            // Put shared Record for Profiles
-            self::$profiles[$profileName]->put($record);
-        }
-
-        // Setup $record relation
-        AnalysisProfile::setupRecordRelation($record, self::$profiles);
-        // Start $record
-        return self::$profiles[$profileNames[0]]->startByUID($record->getUID());
-    }
-
-    /**
      * Stop the Record with $executionUID of Default Profile
      *
      * @param string $executionUID
@@ -224,19 +194,7 @@ class Analyzer
     public static function stopProfile(string $profileName, string $executionUID): void
     {
         // Stop recording
-        self::profile($profileName)
-            ?->stop($executionUID);
-    }
-
-    /**
-     * Stop a shared Record
-     *
-     * @param IARecord $record
-     * @return void
-     */
-    public static function stopShared(IARecord $record): void
-    {
-        $record->stop();
+        self::profile($profileName)?->stop($executionUID);
     }
 
     /**
@@ -279,6 +237,7 @@ class Analyzer
     /**
      * Get title (or name) for Record
      *
+     * @param string|null $title
      * @return string
      */
     public static function getTitle(?string $title): string

@@ -10,10 +10,9 @@ interface IARecord
      * Open a record
      *
      * @param string $name
-     * @param bool $isShared
      * @return IARecord
      */
-    public static function open(string $name, bool $isShared = false): IARecord;
+    public static function open(string $name): IARecord;
 
     /**
      * Start recording
@@ -56,22 +55,6 @@ interface IARecord
      * @return int
      */
     public function diffMem(): int;
-
-    /**
-     * Set pre snapshot and return
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setPreStartSnapshot(array $snapshot): IARecord;
-
-    /**
-     * Set post snapshot and return
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setPreStopSnapshot(array $snapshot): IARecord;
 
     /**
      * Get Record's UID
@@ -140,11 +123,35 @@ interface IARecord
      */
     public function isStopped(): bool;
 
+    /**
+     * Set pre snapshot and return
+     *
+     * @param array $snapshot
+     * @return IARecord
+     */
+    public function setPreStartSnapshot(array $snapshot): IARecord;
 
     /**
-     * Check if Record is shared
+     * Set start snapshot and return
      *
-     * @return bool
+     * @param array $snapshot
+     * @return IARecord
      */
-    public function isShared(): bool;
+    public function setStartSnapshot(array $snapshot): IARecord;
+
+    /**
+     * Set post snapshot and return
+     *
+     * @param array $snapshot
+     * @return IARecord
+     */
+    public function setPreStopSnapshot(array $snapshot): IARecord;
+
+    /**
+     * Set stop snapshot and return
+     *
+     * @param array $snapshot
+     * @return IARecord
+     */
+    public function setStopSnapshot(array $snapshot): IARecord;
 }

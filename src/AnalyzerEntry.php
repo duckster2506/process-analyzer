@@ -47,7 +47,7 @@ class AnalyzerEntry
         $activeProfile = Analyzer::getProfiles();
         if (method_exists(AnalysisProfile::class, 'isActive')) {
             // Filter active Profile only
-            $activeProfile = array_filter(Analyzer::getProfiles(), [AnalysisProfile::class, 'isActive']);
+            $activeProfile = array_filter(Analyzer::getProfiles(), fn($profile) => $profile->isActive());
         }
 
         // Add Record to Profile and start recording
@@ -55,19 +55,33 @@ class AnalyzerEntry
     }
 
     /**
-     * Stop recording. Return true if success. Else, return false
+     * Stop recording
      *
      * @param string|null $uid If provided, stop the Record with corresponding UID. Else, stop the last Record in Profile
      * @return bool
      */
     public function stop(?string $uid = null): void
     {
-        // Check if $uid = null
-        if (is_null($uid)) {
-            $uid = array_key_last($this->profile->getRecords());
-        }
+        // Take snapshot
+        $snapshot = Analyzer::takeSnapshot();
+        // Get $record
+        $record = is_null($uid) ? $this->profile->getLatestActiveRecord() : $this->profile->get($uid);
+        // Check if $record is null or is stopped
+        if (is_null($record) || $record->isStopped()) return;
+        // Set pre stop snapshot
+        $record->setPreStopSnapshot($snapshot);
 
         // Stop
-        $this->profile->stop($uid);
+        $this->profile->stop($record->getUID());
+    }
+
+    /**
+     * Get Profile
+     *
+     * @return IAProfile
+     */
+    public function getProfile(): IAProfile
+    {
+        return $this->profile;
     }
 }

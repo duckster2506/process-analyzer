@@ -23,7 +23,6 @@ class AnalysisRecordTest extends TestCase
         $this->assertEmpty(0.0, $obj->getStopTime());
         $this->assertEquals(0, $obj->getStartMem());
         $this->assertEquals(0, $obj->getStopMem());
-        $this->assertFalse($obj->isShared());
     }
 
     public function testCanAddRelations(): void
@@ -200,95 +199,6 @@ class AnalysisRecordTest extends TestCase
 
         // Check if the $owner and $target has an intersect relation
         $this->assertTrue($owner->getRelations()[0]->isIntersect());
-    }
-
-    public function testCanBranchWithoutRelation(): void
-    {
-        // Create instance and start recording
-        $original = AnalysisRecord::open("Original")->start();
-        $original->setPreStartSnapshot(Analyzer::takeSnapshot());
-        $original->setPreStopSnapshot(Analyzer::takeSnapshot());
-
-        // Branch
-        $branch = $original->branch();
-
-        // Not the same
-        $this->assertNotSame($original, $branch);
-        // UID and relation will be renewed
-        $this->assertNotEquals($original->getUID(), $branch->getUID());
-        // Everything else will be exactly the same
-        $this->assertSame($original->getName(), $branch->getName());
-        $this->assertSame($original->getStartTime(), $branch->getStartTime());
-        $this->assertSame($original->getStopTime(), $branch->getStopTime());
-        $this->assertSame($original->getStartMem(), $branch->getStartMem());
-        $this->assertSame($original->getStopMem(), $branch->getStopMem());
-        $this->assertSame($original->isStarted(), $branch->isStarted());
-        $this->assertSame($original->isStopped(), $branch->isStopped());
-        $this->assertSame($original->isShared(), $branch->isShared());
-        $this->assertSame($original->getPreStartSnapshot(), $branch->getPreStartSnapshot());
-        $this->assertSame($original->getPreStopSnapshot(), $branch->getPreStopSnapshot());
-    }
-
-    public function testCanBranchWithRelation(): void
-    {
-        // Create instance and start recording
-        $original = AnalysisRecord::open("Original")->start();
-        $original->setPreStartSnapshot(Analyzer::takeSnapshot());
-        $original->setPreStopSnapshot(Analyzer::takeSnapshot());
-
-        // Ownership relation
-        $ownership = AnalysisRecord::open("To be owned")->start();
-        // Intersect relation
-        $intersect = AnalysisRecord::open("To be intersected")->start();
-
-        // Add relation
-        $original->establishRelation($ownership);
-        $original->establishRelation($intersect);
-
-        // Stop
-        $ownership->stop();
-        $original->stop();
-        $intersect->stop();
-
-        // Branch
-        $branch = $original->branch();
-
-        // Not the same
-        $this->assertNotSame($original, $branch);
-        // UID and relation will be renewed
-        $this->assertNotEquals($original->getUID(), $branch->getUID());
-        $this->assertNotSame($original->getRelations(), $branch->getRelations());
-        // But it's size is equal
-        $this->assertEquals(count($original->getRelations()), count($branch->getRelations()));
-        // Everything else will be exactly the same
-        $this->assertSame($original->getName(), $branch->getName());
-        $this->assertSame($original->getStartTime(), $branch->getStartTime());
-        $this->assertSame($original->getStopTime(), $branch->getStopTime());
-        $this->assertSame($original->getStartMem(), $branch->getStartMem());
-        $this->assertSame($original->getStopMem(), $branch->getStopMem());
-        $this->assertSame($original->isStarted(), $branch->isStarted());
-        $this->assertSame($original->isStopped(), $branch->isStopped());
-        $this->assertSame($original->isShared(), $branch->isShared());
-        $this->assertSame($original->getPreStartSnapshot(), $branch->getPreStartSnapshot());
-        $this->assertSame($original->getPreStopSnapshot(), $branch->getPreStopSnapshot());
-        // Iterate through each relation to perform assertion
-        for ($i = 0; $i < 2; $i++) {
-            // The RecordRelation object will be renewed
-            $this->assertNotSame($original->getRelations()[$i], $branch->getRelations()[$i]);
-            // Relation type is equal
-            $this->assertEquals($original->getRelations()[$i]->isIntersect(), $branch->getRelations()[$i]->isIntersect());
-            // Check owner or target
-            if ($original->getRelations()[$i]->getOwner() === $original) {
-                // If $original is an owner in old relation, so will $branch
-                $this->assertSame($branch, $branch->getRelations()[$i]->getOwner());
-            } else {
-                // Else, so will $branch
-                $this->assertSame($branch, $branch->getRelations()[$i]->getTarget());
-            }
-            $this->assertSame($branch, $branch->getRelations()[$i]->getOwner());
-            // Target is the same
-            $this->assertSame($original->getRelations()[$i]->getTarget(), $branch->getRelations()[$i]->getTarget());
-        }
     }
 
     public function testCanCalculatePrepTime(): void

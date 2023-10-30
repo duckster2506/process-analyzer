@@ -4,6 +4,7 @@ namespace Duckster\Analyzer\Structures;
 
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Interfaces\IARecord;
+use Exception;
 
 class AnalysisRecord implements IARecord
 {
@@ -47,11 +48,6 @@ class AnalysisRecord implements IARecord
     private int $status;
 
     /**
-     * @var bool Indicate if this Record is shared between multiple Profile
-     */
-    private bool $isShared;
-
-    /**
      * @var RecordRelation[] $relations Record's relation
      */
     private array $relations;
@@ -71,7 +67,6 @@ class AnalysisRecord implements IARecord
         $this->preStopSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->stopSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->status = 0;
-        $this->isShared = false;
         $this->relations = [];
     }
 
@@ -82,12 +77,11 @@ class AnalysisRecord implements IARecord
      * @param bool $isShared
      * @return AnalysisRecord
      */
-    public static function open(string $name, bool $isShared = false): AnalysisRecord
+    public static function open(string $name): AnalysisRecord
     {
         // Create instance
         $output = new AnalysisRecord($name);
         $output->uid = uniqid();
-        $output->isShared = $isShared;
 
         return $output;
     }
@@ -133,35 +127,6 @@ class AnalysisRecord implements IARecord
         $this->stopSnapshot = Analyzer::takeSnapshot(false);
 
         return $this;
-    }
-
-    /**
-     * Branch Record
-     *
-     * @return AnalysisRecord
-     */
-    public function branch(): AnalysisRecord
-    {
-        $output = clone $this;
-
-        // Change UID
-        $output->uid = uniqid();
-        // Set as non-shared
-        $output->isShared = false;
-
-        // Clear relations
-        $output->relations = [];
-        // Iterate through each relation
-        foreach ($this->relations as $relation) {
-            // Create new Relation
-            $copiedRelation = new RecordRelation($relation->getOwner(), $relation->getTarget());
-            // Set relation's type
-            if ($relation->isIntersect()) $copiedRelation->intersect();
-            // Add to clone list
-            $output->relations[] = $copiedRelation;
-        }
-
-        return $output;
     }
 
     /**
@@ -220,32 +185,6 @@ class AnalysisRecord implements IARecord
         }
 
         return $this->preStopSnapshot['mem'] - $this->startSnapshot['mem'];
-    }
-
-    /**
-     * Set pre start snapshot and return self
-     *
-     * @param array $snapshot
-     * @return $this
-     */
-    public function setPreStartSnapshot(array $snapshot): AnalysisRecord
-    {
-        $this->preStartSnapshot = $snapshot;
-
-        return $this;
-    }
-
-    /**
-     * Set pre stop snapshot and return self
-     *
-     * @param array $snapshot
-     * @return $this
-     */
-    public function setPreStopSnapshot(array $snapshot): AnalysisRecord
-    {
-        $this->preStopSnapshot = $snapshot;
-
-        return $this;
     }
 
     /**
@@ -354,16 +293,6 @@ class AnalysisRecord implements IARecord
     }
 
     /**
-     * Check if Record is shared
-     *
-     * @return bool
-     */
-    public function isShared(): bool
-    {
-        return $this->isShared;
-    }
-
-    /**
      * Get pre start snapshot
      *
      * @return array
@@ -384,6 +313,56 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Set pre start snapshot and return self
+     *
+     * @param array $snapshot
+     * @return $this
+     */
+    public function setPreStartSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->preStartSnapshot = $snapshot;
+
+        return $this;
+    }
+
+    /**
+     * Set pre stop snapshot and return self
+     *
+     * @param array $snapshot
+     * @return $this
+     */
+    public function setPreStopSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->preStopSnapshot = $snapshot;
+
+        return $this;
+    }
+
+    /**
+     * Set start snapshot
+     *
+     * @param array $snapshot
+     * @return AnalysisRecord
+     */
+    public function setStartSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->startSnapshot = $snapshot;
+        return $this;
+    }
+
+    /**
+     * Set stop snapshot
+     *
+     * @param array $snapshot
+     * @return AnalysisRecord
+     */
+    public function setStopSnapshot(array $snapshot): AnalysisRecord
+    {
+        $this->stopSnapshot = $snapshot;
+        return $this;
+    }
+
+    /**
      * To string
      *
      * @return string
@@ -391,7 +370,8 @@ class AnalysisRecord implements IARecord
     public function __toString(): string
     {
         return "{" .
-            "startTime: " . $this->getStartTime() . "," .
+            "uid: " . $this->getUID() . "," .
+            " startTime: " . $this->getStartTime() . "," .
             " stopTime: " . $this->getStopTime() . "," .
             " startMem: " . $this->getStartMem() . " bytes," .
             " stopMem: " . $this->getStopMem() . " bytes," .

@@ -41,12 +41,19 @@ interface IAProfile
     public function start(IARecord $record, array $activeProfiles): IARecord;
 
     /**
-     * Close and get Record. Return null if stop failed
+     * Stop and get Record. Return null if stop failed
      *
      * @param string $uid
      * @return IARecord|null
      */
     public function stop(string $uid): ?IARecord;
+
+    /**
+     * Get the latest active Record
+     *
+     * @return IARecord|null
+     */
+    public function getLatestActiveRecord(): ?IARecord;
 
     /**
      * Get Profile's name
