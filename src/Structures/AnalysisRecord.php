@@ -130,18 +130,33 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Get the preparation time to start this Record
+     *
+     * @return float
+     */
+    public function preStartPrepTime(): float
+    {
+        return ($this->startSnapshot['time'] ?? 0.0) - ($this->preStartSnapshot['time'] ?? 0.0);
+    }
+
+    /**
      * Get the preparation time to start and stop this Record
      *
      * @return float
      */
     public function prepTime(): float
     {
-        // Get the preparation time before start recording
-        $preTime = ($this->startSnapshot['time'] ?? 0.0) - ($this->preStartSnapshot['time'] ?? 0.0);
-        // Get the preparation time after stop recording
-        $postTime = ($this->stopSnapshot['time'] ?? 0.0) - ($this->preStopSnapshot['time'] ?? 0.0);
+        return $this->preStartPrepTime() + $this->preStopPrepTime();
+    }
 
-        return $preTime + $postTime;
+    /**
+     * Get the preparation time to stop this Record
+     *
+     * @return float
+     */
+    public function preStopPrepTime(): float
+    {
+        return ($this->stopSnapshot['time'] ?? 0.0) - ($this->preStopSnapshot['time'] ?? 0.0);
     }
 
     /**
@@ -159,18 +174,33 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Get the preparation mem to start this Record
+     *
+     * @return int
+     */
+    public function preStartPrepMem(): int
+    {
+        return ($this->startSnapshot['mem'] ?? 0) - ($this->preStartSnapshot['mem'] ?? 0);
+    }
+
+    /**
      * Get the preparation memory to start and stop this Record
      *
      * @return int
      */
     public function prepMem(): int
     {
-        // Get the preparation memory before start recording
-        $preTime = ($this->startSnapshot['mem'] ?? 0) - ($this->preStartSnapshot['mem'] ?? 0);
-        // Get the preparation memory after stop recording
-        $postTime = ($this->stopSnapshot['mem'] ?? 0) - ($this->preStopSnapshot['mem'] ?? 0);
+        return $this->preStartPrepMem() + $this->preStopPrepMem();
+    }
 
-        return $preTime + $postTime;
+    /**
+     * Get the preparation mem to stop this Record
+     *
+     * @return int
+     */
+    public function preStopPrepMem(): int
+    {
+        return ($this->stopSnapshot['mem'] ?? 0) - ($this->preStopSnapshot['mem'] ?? 0);
     }
 
     /**

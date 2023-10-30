@@ -29,11 +29,25 @@ interface IARecord
     public function stop(): IARecord;
 
     /**
+     * Get the preparation time to start this Record
+     *
+     * @return float
+     */
+    public function preStartPrepTime(): float;
+
+    /**
      * Get the preparation time to start and stop this Record
      *
      * @return float
      */
     public function prepTime(): float;
+
+    /**
+     * Get the preparation time to stop this Record
+     *
+     * @return float
+     */
+    public function preStopPrepTime(): float;
 
     /**
      * Get the diff between startTime and stopTime
@@ -43,11 +57,25 @@ interface IARecord
     public function diffTime(): float;
 
     /**
+     * Get the preparation mem to start this Record
+     *
+     * @return int
+     */
+    public function preStartPrepMem(): int;
+
+    /**
      * Get the preparation memory to start and stop this Record
      *
      * @return int
      */
     public function prepMem(): int;
+
+    /**
+     * Get the preparation mem to stop this Record
+     *
+     * @return int
+     */
+    public function preStopPrepMem(): int;
 
     /**
      * Get the diff between startEmMem and stopEmMem
