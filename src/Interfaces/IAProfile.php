@@ -3,7 +3,6 @@
 namespace Duckster\Analyzer\Interfaces;
 
 use Duckster\Analyzer\Structures\AnalysisRecord;
-use Exception;
 
 interface IAProfile
 {
@@ -75,4 +74,12 @@ interface IAProfile
      * @return bool
      */
     public function isActive(): bool;
+
+    /**
+     * Set name
+     *
+     * @param string $name
+     * @return IAProfile
+     */
+    public function setName(string $name): IAProfile;
 }

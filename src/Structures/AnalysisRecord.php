@@ -4,7 +4,6 @@ namespace Duckster\Analyzer\Structures;
 
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Interfaces\IARecord;
-use Exception;
 
 class AnalysisRecord implements IARecord
 {
@@ -51,6 +50,11 @@ class AnalysisRecord implements IARecord
      * @var RecordRelation[] $relations Record's relation
      */
     private array $relations;
+
+    /**
+     * @var array Extra information
+     */
+    private array $extras;
 
     // ***************************************
     // Public API
@@ -303,6 +307,16 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Get extra information
+     *
+     * @return array
+     */
+    public function getExtras(): array
+    {
+        return $this->extras;
+    }
+
+    /**
      * Check if Record is started
      *
      * @return bool
@@ -340,6 +354,19 @@ class AnalysisRecord implements IARecord
     public function getPreStopSnapshot(): array
     {
         return $this->preStopSnapshot;
+    }
+
+    /**
+     * Set name
+     *
+     * @param string $name
+     * @return $this
+     */
+    public function setName(string $name): AnalysisRecord
+    {
+        $this->name = $name;
+
+        return $this;
     }
 
     /**

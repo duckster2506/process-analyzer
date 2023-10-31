@@ -2,7 +2,7 @@
 
 namespace Duckster\Analyzer\Tests;
 
-use Duckster\Analyzer\AnalysisUtils;
+use Duckster\Analyzer\Utils;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerEntry;
 use Duckster\Analyzer\Interfaces\IAProfile;
@@ -18,70 +18,70 @@ class AnalyzerEntryTest extends TestCase
         Analyzer::clear();
     }
 
-//    public function testCanBeConstructed(): void
-//    {
-//        // Create instance
-//        $entry = Analyzer::profile("Profile");
-//
-//        // Check instance class
-//        $this->assertInstanceOf(AnalyzerEntry::class, $entry);
-//        // Check if entry can get Profile
-//        $this->assertInstanceOf(AnalysisProfile::class, $entry->getProfile());
-//        // Check if Profile's name
-//        $this->assertSame("Profile", $entry->getProfile()->getName());
-//    }
-//
-//    public function testCanStart(): void
-//    {
-//        // Create entry
-//        $entry = Analyzer::profile("Profile");
-//
-//        // Check if entry's Profile is empty
-//        $this->assertEmpty($entry->getProfile()->getRecords());
-//
-//        // Start
-//        $uid = $entry->start("Record 1");
-//
-//        // Check size after start
-//        $this->assertCount(1, $entry->getProfile()->getRecords());
-//        // Check return type
-//        $this->assertIsString($uid);
-//        // Check Record's props
-//        $this->assertSame("Record 1", $entry->getProfile()->get($uid)->getName());
-//        $this->assertTrue($entry->getProfile()->get($uid)->isStarted());
-//        $this->assertFalse($entry->getProfile()->get($uid)->isStopped());
-//    }
-//
-//    public function testCanStop(): void
-//    {
-//        // Create entry
-//        $entry = Analyzer::profile("Profile");
-//        // Start
-//        $uid = $entry->start("Record 2");
-//        $entry->stop($uid);
-//
-//        // Check Record's props
-//        $this->assertSame("Record 2", $entry->getProfile()->get($uid)->getName());
-//        $this->assertFalse($entry->getProfile()->get($uid)->isStarted());
-//        $this->assertTrue($entry->getProfile()->get($uid)->isStopped());
-//    }
-//
-//    public function testCanStopLatest(): void
-//    {
-//        // Create entry
-//        $entry = Analyzer::profile("Profile");
-//        // Start
-//        $uid1 = $entry->start("Record 1");
-//        $uid2 = $entry->start("Record 2");
-//        $entry->stop();
-//
-//        // Check if Record 1 is not stopped
-//        $this->assertTrue($entry->getProfile()->get($uid1)->isStarted());
-//        $this->assertFalse($entry->getProfile()->get($uid1)->isStopped());
-//        // Check if Record 2 is stopped
-//        $this->assertFalse($entry->getProfile()->get($uid2)->isStarted());
-//        $this->assertTrue($entry->getProfile()->get($uid2)->isStopped());
-//    }
+    public function testCanBeConstructed(): void
+    {
+        // Create instance
+        $entry = Analyzer::profile("Profile");
+
+        // Check instance class
+        $this->assertInstanceOf(AnalyzerEntry::class, $entry);
+        // Check if entry can get Profile
+        $this->assertInstanceOf(AnalysisProfile::class, $entry->getProfile());
+        // Check if Profile's name
+        $this->assertSame("Profile", $entry->getProfile()->getName());
+    }
+
+    public function testCanStart(): void
+    {
+        // Create entry
+        $entry = Analyzer::profile("Profile");
+
+        // Check if entry's Profile is empty
+        $this->assertEmpty($entry->getProfile()->getRecords());
+
+        // Start
+        $uid = $entry->start("Record 1");
+
+        // Check size after start
+        $this->assertCount(1, $entry->getProfile()->getRecords());
+        // Check return type
+        $this->assertIsString($uid);
+        // Check Record's props
+        $this->assertSame("Record 1", $entry->getProfile()->get($uid)->getName());
+        $this->assertTrue($entry->getProfile()->get($uid)->isStarted());
+        $this->assertFalse($entry->getProfile()->get($uid)->isStopped());
+    }
+
+    public function testCanStop(): void
+    {
+        // Create entry
+        $entry = Analyzer::profile("Profile");
+        // Start
+        $uid = $entry->start("Record 2");
+        $entry->stop($uid);
+
+        // Check Record's props
+        $this->assertSame("Record 2", $entry->getProfile()->get($uid)->getName());
+        $this->assertFalse($entry->getProfile()->get($uid)->isStarted());
+        $this->assertTrue($entry->getProfile()->get($uid)->isStopped());
+    }
+
+    public function testCanStopLatest(): void
+    {
+        // Create entry
+        $entry = Analyzer::profile("Profile");
+        // Start
+        $uid1 = $entry->start("Record 1");
+        $uid2 = $entry->start("Record 2");
+        $entry->stop();
+
+        // Check if Record 1 is not stopped
+        $this->assertTrue($entry->getProfile()->get($uid1)->isStarted());
+        $this->assertFalse($entry->getProfile()->get($uid1)->isStopped());
+        // Check if Record 2 is stopped
+        $this->assertFalse($entry->getProfile()->get($uid2)->isStarted());
+        $this->assertTrue($entry->getProfile()->get($uid2)->isStopped());
+    }
 
     public function testSubTestRelationWithSingleProfile(): void
     {
@@ -106,7 +106,7 @@ class AnalyzerEntryTest extends TestCase
         // ***********************
         // Check Record 1
         // ***********************
-        AnalysisUtils::rawLog($record1);
+        Utils::rawLog($record1);
         // Record is stopped
         $this->assertTrue($record1->isStopped());
         // Record has 2 relation
@@ -175,7 +175,7 @@ class AnalyzerEntryTest extends TestCase
         // ***********************
         // Check Record 1
         // ***********************
-        AnalysisUtils::rawLog($record1);
+        Utils::rawLog($record1);
         // Record is stopped
         $this->assertTrue($record1->isStopped());
         // Record has 2 relation

@@ -3,6 +3,7 @@
 namespace Duckster\Analyzer\Tests;
 
 use Duckster\Analyzer\Analyzer;
+use Duckster\Analyzer\AnalyzerConfig;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use PHPUnit\Framework\TestCase;
 
@@ -42,6 +43,25 @@ class AnalyzerTest extends TestCase
         // Check if snapshot has 'time' and 'mem'
         $this->assertArrayHasKey('time', $snapshot);
         $this->assertArrayHasKey('mem', $snapshot);
+    }
+
+    public function testCanConfig(): void
+    {
+        // Try to config Analyzer with a new config instance
+        $config = new AnalyzerConfig();
+        // Config
+        Analyzer::tryToInit($config);
+
+        // Check config type
+        $this->assertInstanceOf(AnalyzerConfig::class, Analyzer::config());
+        // Check if new config is used
+        $this->assertSame($config, Analyzer::config());
+
+        // Try to config with default config class
+        Analyzer::tryToInit();
+
+        // Check if Analyzer's config instance is still the same
+        $this->assertSame($config, Analyzer::config());
     }
 
     public function testCanCreateProfile(): void

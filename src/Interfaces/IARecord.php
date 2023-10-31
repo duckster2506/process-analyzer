@@ -137,6 +137,13 @@ interface IARecord
     public function getRelations(): array;
 
     /**
+     * Get extra information
+     *
+     * @return array
+     */
+    public function getExtras(): array;
+
+    /**
      * Check if Record is started
      *
      * @return bool
@@ -150,6 +157,14 @@ interface IARecord
      * @return bool
      */
     public function isStopped(): bool;
+
+    /**
+     * Set name
+     *
+     * @param string $name
+     * @return IARecord
+     */
+    public function setName(string $name): IARecord;
 
     /**
      * Set pre snapshot and return

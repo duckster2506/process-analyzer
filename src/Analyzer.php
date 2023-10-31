@@ -3,38 +3,10 @@
 namespace Duckster\Analyzer;
 
 use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
-use Exception;
-use phpDocumentor\Reflection\Types\Self_;
 
 class Analyzer
 {
-    // ***************************************
-    // Configurable
-    // ***************************************
-
-    /**
-     * @var string Default Profile name
-     */
-    protected static string $defaultProfile = "Default";
-
-    /**
-     * @var string[] Default record name getter
-     */
-    protected static ?array $defaultRecordGetter = null;
-
-    /**
-     * @var bool Print Profile as ASCII table
-     */
-    protected static bool $prettyPrint = true;
-
-    /**
-     * @var string Printer class
-     */
-    protected static string $printer = AnalysisPrinter::class;
-
     // ***************************************
     // Properties
     // ***************************************
@@ -44,9 +16,39 @@ class Analyzer
      */
     private static array $profiles = [];
 
+    /**
+     * @var AnalyzerConfig|null Config object
+     */
+    private static ?AnalyzerConfig $config = null;
+
     // ***************************************
     // Public API
     // ***************************************
+
+    /**
+     * Try to init Analyzer
+     *
+     * @param AnalyzerConfig|null $config
+     * @return void
+     */
+    public static function tryToInit(AnalyzerConfig $config = null): void
+    {
+        if (isset($config)) {
+            self::$config = $config;
+        } else if (is_null(self::$config)) {
+            self::$config = new AnalyzerConfig();
+        }
+    }
+
+    /**
+     * Get config
+     *
+     * @return AnalyzerConfig
+     */
+    public static function config(): AnalyzerConfig
+    {
+        return self::$config;
+    }
 
     /**
      * Generate a snapshot
@@ -90,6 +92,9 @@ class Analyzer
     {
         // Take snapshot
         $snapshot = self::takeSnapshot();
+
+        // Try to init
+        self::tryToInit();
 
         // Check if Profile is existing
         if (!self::hasProfile($name)) {
@@ -157,7 +162,7 @@ class Analyzer
      */
     public static function start(?string $title = null): string
     {
-        return self::startProfile(static::$defaultProfile ?? "Default", $title);
+        return self::startProfile(self::$config->getDefaultProfile(), $title);
     }
 
     /**
@@ -181,7 +186,7 @@ class Analyzer
      */
     public static function stop(string $executionUID): void
     {
-        self::stopProfile(static::$defaultProfile ?? "Default", $executionUID);
+        self::stopProfile(self::$config->getDefaultProfile(), $executionUID);
     }
 
     /**
@@ -217,7 +222,7 @@ class Analyzer
     public static function flush(?string $profileName = null): void
     {
         // Create a Printer instance
-        $printerInstance = new self::$printer;
+        $printerInstance = new (self::$config->getPrinter());
 
         if (is_null($profileName)) {
             // Iterate and flush all Profile
@@ -228,11 +233,9 @@ class Analyzer
             // Pop and print
             $printerInstance->printProfile(self::popProfile($profileName));
         }
-    }
 
-    // ***************************************
-    // Overridable
-    // ***************************************
+        self::$profiles = [];
+    }
 
     /**
      * Get title (or name) for Record
@@ -245,7 +248,7 @@ class Analyzer
         // Indicate if $title is null
         if (is_null($title)) {
             // Indicate if
-            if (is_null(static::$defaultRecordGetter)) {
+            if (is_null(self::$config->getDefaultRecordGetter())) {
                 // Get the backtrace
                 $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 
@@ -253,7 +256,7 @@ class Analyzer
                     ? "Function: " . $backtrace[1]['function']
                     : $backtrace[0]['file'] . ":" . ($backtrace[0]['line'] ?? 0);
             } else {
-                return call_user_func(static::$defaultRecordGetter);
+                return call_user_func(self::$config->getDefaultRecordGetter());
             }
         }
 

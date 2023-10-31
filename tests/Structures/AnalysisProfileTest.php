@@ -2,7 +2,7 @@
 
 namespace Duckster\Analyzer\Tests\Structures;
 
-use Duckster\Analyzer\AnalysisUtils;
+use Duckster\Analyzer\Utils;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;

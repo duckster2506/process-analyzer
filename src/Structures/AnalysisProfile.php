@@ -4,7 +4,6 @@ namespace Duckster\Analyzer\Structures;
 
 use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
-use function Webmozart\Assert\Tests\StaticAnalysis\null;
 
 class AnalysisProfile implements IAProfile
 {
@@ -175,6 +174,19 @@ class AnalysisProfile implements IAProfile
     public function getRecords(): array
     {
         return $this->records;
+    }
+
+    /**
+     * Set name
+     *
+     * @param string $name
+     * @return IAProfile
+     */
+    public function setName(string $name): IAProfile
+    {
+        $this->name = $name;
+
+        return $this;
     }
 
     public function __toString(): string
