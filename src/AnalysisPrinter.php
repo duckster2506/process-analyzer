@@ -15,11 +15,6 @@ class AnalysisPrinter extends IAPrinter
     // ***************************************
 
     /**
-     * @var string[] Preprocessed Record's data
-     */
-    private array $data;
-
-    /**
      * @var AnalysisDataset[] Pretty print datasets
      */
     private array $datasets;
@@ -41,6 +36,7 @@ class AnalysisPrinter extends IAPrinter
     public function __construct()
     {
         $this->content = "";
+        $this->datasets = [];
         $this->count = 0;
     }
 
@@ -60,24 +56,25 @@ class AnalysisPrinter extends IAPrinter
             // Increase count
             $this->count += 1;
             // Preprocess Record's data
-            $this->data = $this->preprocessRecord($record);
+            $data = $this->preprocessRecord($record);
 
             // Check if Printer should prepare for pretty print
-            if (Analyzer::config()->getPrettyPrint()) {
+            if (Analyzer::config()->prettyPrint()) {
                 // Convert Record to datasets
-                $this->datasets = $this->convertToAndPushToDatasets($this->data, $this->datasets ?? []);
+                $this->convertAndPushToDatasets($data);
             } else {
                 // Convert to printable cols
-                $this->content .= $this->convertToString($this->data);
+                $this->convertAndAppendToString($data);
             }
         }
 
         // Check if pretty print
-        if (Analyzer::config()->getPrettyPrint()) {
+        if (Analyzer::config()->prettyPrint()) {
             // Convert to table
-            $this->content = $this->convertToTable($this->datasets);
+            $this->convertToTableAndAppendToString($this->datasets);
         }
 
+        $this->wrapContentInProfile($profile);
         $this->printContent($this->content);
     }
 
@@ -91,13 +88,13 @@ class AnalysisPrinter extends IAPrinter
      * @param IAProfile $profile
      * @return void
      */
-    public function preprocessProfile(IAProfile $profile): void
+    private function preprocessProfile(IAProfile $profile): void
     {
         // Call hook
         Utils::callHook(Analyzer::config(), "onPreprocessProfile", $profile);
         // Apply prefix and suffix for Profile's name
         $profile->setName(
-            Analyzer::config()->getProfilePrefix() . $profile->getName() . Analyzer::config()->getProfileSuffix()
+            Analyzer::config()->profilePrefix() . $profile->getName() . Analyzer::config()->profileSuffix()
         );
     }
 
@@ -107,106 +104,113 @@ class AnalysisPrinter extends IAPrinter
      * @param IARecord $record
      * @return array
      */
-    public function preprocessRecord(IARecord $record): array
+    private function preprocessRecord(IARecord $record): array
     {
         // Hook: beforePrint for AnalysisProfile
         Utils::callHook(Analyzer::config(), "onPreprocessRecord", $record);
 
         // $record new Name
-        $name = Analyzer::config()->getRecordPrefix() . $record->getName() . Analyzer::config()->getRecordSuffix();
+        $name = Analyzer::config()->recordPrefix() . $record->getName() . Analyzer::config()->recordSuffix();
         // Apply prefix and suffix for Profile's name
         $record->setName($name);
 
         // Preprocess other data
-        return [
+        $output = [
             'uid' => $record->getUID(),
             'name' => $record->getName(),
-            'time' => Utils::applyFormatter($record->diffTime(), Analyzer::config()->getTimeFormatter()),
-            'memory' => Utils::applyFormatter($record->diffMem(), Analyzer::config()->getMemFormatter())
+            'time' => Analyzer::config()->timeFormatter($record->diffTime()),
+            'memory' => Analyzer::config()->memFormatter($record->diffMem())
         ];
+
+        // Skip UID column
+        if (!Analyzer::config()->showUID()) unset($output['uid']);
+
+        return $output;
     }
 
     /**
      * Convert Record to datasets
      *
      * @param array $data
-     * @param array $datasets
-     * @return AnalysisDataset[]
      */
-    public function convertToAndPushToDatasets(array $data, array $datasets): array
+    private function convertAndPushToDatasets(array $data): void
     {
         // Iterate through each $data key
         foreach ($data as $key => $value) {
             // Check if dataset is set
-            if (!isset($datasets[$key])) $datasets[$key] = new AnalysisDataset(strlen($key));
+            if (!isset($this->datasets[$key])) $this->datasets[$key] = new AnalysisDataset(strlen($key));
             // Add data to dataset
-            $datasets[$key]->add($value);
+            $this->datasets[$key]->add($value);
         }
-
-        return $datasets;
     }
 
     /**
      * Convert Record to string
      *
      * @param array $data
-     * @return string
+     * @return void
      */
-    public function convertToString(array $data): string
+    private function convertAndAppendToString(array $data): void
     {
         $line = [""];
         // UID
-        if (Analyzer::config()->getShowUID()) $line[0] = sprintf("[%s] ", $data['uid']);
+        if (Analyzer::config()->showUID()) $line[0] = sprintf("[%s] ", $data['uid']);
         // Name
         $line[0] .= sprintf("%s:", $data['name']);
         // Execution time
-        $line[] = sprintf("Time: %s", $data['time']);
+        $line[] = sprintf("Time ⇒ [%s];", $data['time']);
         // Execution memory
-        $line[] = sprintf("Memory: %s", $data['memory']);
+        $line[] = sprintf("Memory ⇒ [%s]", $data['memory']);
 
         // Create content
-        $content = implode(Analyzer::config()->getOneLine() ? " " : (PHP_EOL . "\t"), $line);
+        $content = implode(Analyzer::config()->oneLine() ? " " : (PHP_EOL . "\t"), $line);
         // Call hook
         Utils::callHook(Analyzer::config(), "onEachRecordString", $content);
 
         // Add to content
-        return $content . PHP_EOL;
+        $this->content .= $content . PHP_EOL;
     }
 
     /**
      * Convert datasets to table string
      *
      * @param AnalysisDataset[] $datasets
-     * @return string
+     * @return void
      */
-    public function convertToTable(array $datasets): string
+    private function convertToTableAndAppendToString(array $datasets): void
     {
         // Create column width structure (2 for padding)
         $widthOfColumns = array_map(fn($dataset) => $dataset->getMaxLength() + 2, $datasets);
 
-        $output = $this->createHeader($widthOfColumns);
+        $this->content = $this->createHeader($widthOfColumns);
 
         // Iterate through each
         for ($i = 0; $i < $this->count; $i++) {
             // Iterate through each column
             foreach ($widthOfColumns as $header => $width) {
-                $output .= Analyzer::config()->getVerticalLineChar()
-                    . str_pad(" " . $datasets[$header]->get($i) . " ", $width);
+                $this->content .= Analyzer::config()->verticalLineChar()
+                    . str_pad(" " . $datasets[$header]->get($i) . " ", $width, " ", (int)($header === "name"));
             }
 
             // Add last border and linebreak
-            $output .= Analyzer::config()->getVerticalLineChar() . PHP_EOL;
+            $this->content .= Analyzer::config()->verticalLineChar() . PHP_EOL;
         }
 
         // Create last border
-        $output .= $this->createBorderRow(
-            $widthOfColumns,
-            Analyzer::config()->getBottomLeftChar(),
-            Analyzer::config()->getBottomForkChar(),
-            Analyzer::config()->getBottomRightChar()
-        );
+        $this->content .= $this->createBorderRow(
+                $widthOfColumns,
+                Analyzer::config()->bottomLeftChar(),
+                Analyzer::config()->bottomForkChar(),
+                Analyzer::config()->bottomRightChar()
+            ) . PHP_EOL;
+    }
 
-        return $output;
+    private function wrapContentInProfile(IAProfile $profile): void
+    {
+        $this->content =
+            $profile->getName() . " " . str_repeat("-", 20) . PHP_EOL .
+            $this->content .
+            str_repeat("-", 20 + strlen($profile->getName())) . PHP_EOL;
     }
 
     /**
@@ -214,22 +218,22 @@ class AnalysisPrinter extends IAPrinter
      *
      * @return void
      */
-    public function printContent(string $content)
+    private function printContent(string $content)
     {
         // Hook: printRecord
         Utils::callHook(Analyzer::config(), "onPrintProfileString", $this->content);
 
         // Check if Printer should print to file
-        $useFile = Analyzer::config()->getUseFile();
-        if (!!$useFile) {
+        $useFile = Analyzer::config()->useFile();
+        if ($useFile) {
             // Get file name
-            file_put_contents($useFile === true ? "logs/log.txt" : $useFile, $content . PHP_EOL, FILE_APPEND);
+            file_put_contents($useFile, $content, FILE_APPEND);
         }
 
         // Check if Printer should print to console
-        if (Analyzer::config()->getUseConsole()) {
+        if (Analyzer::config()->useConsole()) {
             // Print to console
-            printf("%s", $content . PHP_EOL);
+            printf("%s", $content);
         }
     }
 
@@ -242,9 +246,9 @@ class AnalysisPrinter extends IAPrinter
      * @param string $end
      * @return string
      */
-    public function createBorderRow(array $widthOfColumns, string $start, string $separator, string $end): string
+    private function createBorderRow(array $widthOfColumns, string $start, string $separator, string $end): string
     {
-        $content = array_map(fn($width) => str_repeat(Analyzer::config()->getHorizontalLineChar(), $width), $widthOfColumns);
+        $content = array_map(fn($width) => str_repeat(Analyzer::config()->horizontalLineChar(), $width), $widthOfColumns);
         return $start . implode($separator, $content) . $end;
     }
 
@@ -254,29 +258,29 @@ class AnalysisPrinter extends IAPrinter
      * @param array $widthOfColumns
      * @return string
      */
-    public function createHeader(array $widthOfColumns): string
+    private function createHeader(array $widthOfColumns): string
     {
         // Create first row (top border)
         $output = $this->createBorderRow(
                 $widthOfColumns,
-                Analyzer::config()->getTopLeftChar(),
-                Analyzer::config()->getTopForkChar(),
-                Analyzer::config()->getTopRightChar()
+                Analyzer::config()->topLeftChar(),
+                Analyzer::config()->topForkChar(),
+                Analyzer::config()->topRightChar()
             ) . PHP_EOL;
 
         // Iterate through each dataset's keys to create header
         foreach (array_keys($this->datasets) as $key) {
             // Add headers
-            $output .= Analyzer::config()->getVerticalLineChar()
+            $output .= Analyzer::config()->verticalLineChar()
                 . str_pad(" " . ucfirst($key) . " ", $widthOfColumns[$key]);
         }
 
         // Create border to separate header and content
-        $output .= Analyzer::config()->getVerticalLineChar() . PHP_EOL . $this->createBorderRow(
+        $output .= Analyzer::config()->verticalLineChar() . PHP_EOL . $this->createBorderRow(
                 $widthOfColumns,
-                Analyzer::config()->getLeftForkChar(),
-                Analyzer::config()->getCrossChar(),
-                Analyzer::config()->getRightForkChar()
+                Analyzer::config()->leftForkChar(),
+                Analyzer::config()->crossChar(),
+                Analyzer::config()->rightForkChar()
             );
 
         return $output . PHP_EOL;

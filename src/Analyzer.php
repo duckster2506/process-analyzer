@@ -86,13 +86,15 @@ class Analyzer
      * Get or create a Profile by name
      *
      * @param string $name
-     * @return AnalyzerEntry
+     * @return AnalyzerEntry|null Return null if disabled
      */
-    public static function profile(string $name): AnalyzerEntry
+    public static function profile(string $name): ?AnalyzerEntry
     {
         // Take snapshot
         $snapshot = self::takeSnapshot();
 
+        // Check if disabled
+        if (!self::$config->enable()) return null;
         // Try to init
         self::tryToInit();
 
@@ -162,7 +164,7 @@ class Analyzer
      */
     public static function start(?string $title = null): string
     {
-        return self::startProfile(self::$config->getDefaultProfile(), $title);
+        return self::startProfile(self::$config->defaultProfile(), $title);
     }
 
     /**
@@ -170,12 +172,12 @@ class Analyzer
      *
      * @param string $profileName
      * @param string|null $title
-     * @return string
+     * @return string|null Return null if disabled
      */
-    public static function startProfile(string $profileName, ?string $title = null): string
+    public static function startProfile(string $profileName, ?string $title = null): ?string
     {
         // Start recording
-        return self::profile($profileName)->start($title);
+        return self::profile($profileName)?->start($title);
     }
 
     /**
@@ -186,7 +188,7 @@ class Analyzer
      */
     public static function stop(string $executionUID): void
     {
-        self::stopProfile(self::$config->getDefaultProfile(), $executionUID);
+        self::stopProfile(self::$config->defaultProfile(), $executionUID);
     }
 
     /**
@@ -221,20 +223,23 @@ class Analyzer
      */
     public static function flush(?string $profileName = null): void
     {
+        // Check if disabled
+        if (!self::$config->enable()) return;
         // Create a Printer instance
-        $printerInstance = new (self::$config->getPrinter());
+        $printerInstance = new (self::$config->printer());
 
         if (is_null($profileName)) {
             // Iterate and flush all Profile
             foreach (array_keys(self::$profiles) as $profileName) {
                 $printerInstance->printProfile(self::popProfile($profileName));
             }
+            // Clear all Profile
+            self::$profiles = [];
         } elseif (self::hasProfile($profileName)) {
             // Pop and print
             $printerInstance->printProfile(self::popProfile($profileName));
         }
 
-        self::$profiles = [];
     }
 
     /**
@@ -247,8 +252,10 @@ class Analyzer
     {
         // Indicate if $title is null
         if (is_null($title)) {
+            // Config default
+            $default = self::$config->defaultRecordGetter();
             // Indicate if
-            if (is_null(self::$config->getDefaultRecordGetter())) {
+            if (is_null($default)) {
                 // Get the backtrace
                 $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
 
@@ -256,7 +263,7 @@ class Analyzer
                     ? "Function: " . $backtrace[1]['function']
                     : $backtrace[0]['file'] . ":" . ($backtrace[0]['line'] ?? 0);
             } else {
-                return call_user_func(self::$config->getDefaultRecordGetter());
+                return $default;
             }
         }
 

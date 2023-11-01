@@ -3,7 +3,6 @@
 namespace Duckster\Analyzer\Tests\Structures;
 
 use Duckster\Analyzer\Structures\AnalysisDataset;
-use Duckster\Analyzer\Utils;
 use PHPUnit\Framework\TestCase;
 
 class AnalysisDatasetTest extends TestCase

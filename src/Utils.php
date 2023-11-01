@@ -29,22 +29,4 @@ class Utils
             call_user_func([$obj, $hookName], ...$args);
         }
     }
-
-    /**
-     * Apply formatter
-     *
-     * @param mixed $value
-     * @param callable|null $formatter
-     * @return string
-     */
-    public static function applyFormatter(mixed $value, mixed $formatter): string
-    {
-        if (is_callable($formatter)) {
-            return $formatter($value);
-        } else if (is_array($formatter)) {
-            return call_user_func($formatter, $value);
-        } else {
-            return $value;
-        }
-    }
 }

@@ -9,6 +9,11 @@ class AnalyzerConfig
     // ***************************************
 
     /**
+     * @var bool Enable Analyzer
+     */
+    protected bool $enable = true;
+
+    /**
      * @var string Default Profile name
      */
     protected string $defaultProfile = "Default";
@@ -35,7 +40,7 @@ class AnalyzerConfig
     /**
      * @var bool Print string in one line
      */
-    protected bool $oneLine = true;
+    protected bool $oneLine = false;
 
     /**
      * @var bool Show UID
@@ -43,9 +48,9 @@ class AnalyzerConfig
     protected bool $showUid = true;
 
     /**
-     * @var string|bool Print to file
+     * @var string|false Print to file
      */
-    protected string|bool $useFile = "logs/log.txt";
+    protected string|false $useFile = "logs/log.txt";
 
     /**
      * @var bool Print to console
@@ -127,19 +132,36 @@ class AnalyzerConfig
     // ***************************************
 
     /**
+     * Get enable Analyzer
+     *
+     * @return bool
+     */
+    public function enable(): bool
+    {
+        return $this->enable;
+    }
+
+    /**
+     * Get default Profile name
+     *
      * @return string
      */
-    public function getDefaultProfile(): string
+    public function defaultProfile(): string
     {
         return $this->defaultProfile;
     }
 
     /**
-     * @return mixed
+     * Get default Record name
+     *
+     * @return string|null
      */
-    public function getDefaultRecordGetter(): mixed
+    public function defaultRecordGetter(): ?string
     {
-        return $this->defaultRecordGetter;
+        if (is_callable($this->defaultRecordGetter) || is_array($this->defaultRecordGetter))
+            return call_user_func($this->defaultRecordGetter);
+
+        return null;
     }
 
     /**
@@ -147,7 +169,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getPrinter(): string
+    public function printer(): string
     {
         return $this->printer;
     }
@@ -157,7 +179,7 @@ class AnalyzerConfig
      *
      * @return bool
      */
-    public function getPrettyPrint(): bool
+    public function prettyPrint(): bool
     {
         return $this->prettyPrint;
     }
@@ -167,7 +189,7 @@ class AnalyzerConfig
      *
      * @return bool
      */
-    public function getOneLine(): bool
+    public function oneLine(): bool
     {
         return $this->oneLine;
     }
@@ -177,7 +199,7 @@ class AnalyzerConfig
      *
      * @return bool
      */
-    public function getShowUID(): bool
+    public function showUID(): bool
     {
         return $this->showUid;
     }
@@ -185,9 +207,9 @@ class AnalyzerConfig
     /**
      * Print to file
      *
-     * @return bool|string
+     * @return string|false
      */
-    public function getUseFile(): bool|string
+    public function useFile(): string|false
     {
         return $this->useFile;
     }
@@ -197,18 +219,17 @@ class AnalyzerConfig
      *
      * @return bool
      */
-    public function getUseConsole(): bool
+    public function useConsole(): bool
     {
         return $this->useConsole;
     }
-
 
     /**
      * Profile prefix
      *
      * @return string
      */
-    public function getProfilePrefix(): string
+    public function profilePrefix(): string
     {
         return $this->profilePrefix;
     }
@@ -218,7 +239,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getProfileSuffix(): string
+    public function profileSuffix(): string
     {
         return $this->profileSuffix;
     }
@@ -228,7 +249,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getRecordPrefix(): string
+    public function recordPrefix(): string
     {
         return $this->recordPrefix;
     }
@@ -238,7 +259,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getRecordSuffix(): string
+    public function recordSuffix(): string
     {
         return $this->recordSuffix;
     }
@@ -248,7 +269,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getTimeUnit(): string
+    public function timeUnit(): string
     {
         return $this->timeUnit;
     }
@@ -256,11 +277,29 @@ class AnalyzerConfig
     /**
      * Diff time formatter
      *
+     * @param float $value
      * @return mixed
      */
-    public function getTimeFormatter(): mixed
+    public function timeFormatter(float $value): string
     {
-        return $this->timeFormatter;
+        if (is_callable($this->timeFormatter) || is_array($this->timeFormatter))
+            return call_user_func($this->timeFormatter, $value);
+
+        $offset = match (strtolower($this->timeUnit)) {
+            "ns", "nanosecond" => 1,
+            "μs", "microsecond" => 1e+3,
+            "s", "second" => 1e+9,
+            default => 1e+6
+        };
+
+        $unit = match (strtolower($this->timeUnit)) {
+            "nanosecond" => "ns",
+            "microsecond" => "μs",
+            "second" => "s",
+            default => "ms"
+        };
+
+        return round($value / $offset, 3) . " $unit";
     }
 
     /**
@@ -268,7 +307,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getMemUnit(): string
+    public function memUnit(): string
     {
         return $this->memUnit;
     }
@@ -278,9 +317,26 @@ class AnalyzerConfig
      *
      * @return mixed
      */
-    public function getMemFormatter(): mixed
+    public function memFormatter(int $value): string
     {
-        return $this->memFormatter;
+        if (is_callable($this->memFormatter) || is_array($this->memFormatter))
+            return call_user_func($this->memFormatter, $value);
+
+        $offset = match (strtolower($this->memUnit)) {
+            "b", "byte" => 1,
+            "kb", "kilobyte" => 1024,
+            "gb", "gigabyte" => 1073741824,
+            default => 1048576
+        };
+
+        $unit = match (strtolower($this->memUnit)) {
+            "byte" => "b",
+            "megabyte" => "mb",
+            "gigabyte" => "gb",
+            default => "kb"
+        };
+
+        return round($value / $offset, 3) . " " . strtoupper($unit);
     }
 
     /**
@@ -288,7 +344,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getTopLeftChar(): string
+    public function topLeftChar(): string
     {
         return $this->topLeftChar;
     }
@@ -298,7 +354,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getTopRightChar(): string
+    public function topRightChar(): string
     {
         return $this->topRightChar;
     }
@@ -308,7 +364,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getBottomLeftChar(): string
+    public function bottomLeftChar(): string
     {
         return $this->bottomLeftChar;
     }
@@ -318,7 +374,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getBottomRightChar(): string
+    public function bottomRightChar(): string
     {
         return $this->bottomRightChar;
     }
@@ -328,7 +384,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getTopForkChar(): string
+    public function topForkChar(): string
     {
         return $this->topForkChar;
     }
@@ -338,7 +394,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getRightForkChar(): string
+    public function rightForkChar(): string
     {
         return $this->rightForkChar;
     }
@@ -348,7 +404,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getBottomForkChar(): string
+    public function bottomForkChar(): string
     {
         return $this->bottomForkChar;
     }
@@ -358,7 +414,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getLeftForkChar(): string
+    public function leftForkChar(): string
     {
         return $this->leftForkChar;
     }
@@ -368,7 +424,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getCrossChar(): string
+    public function crossChar(): string
     {
         return $this->crossChar;
     }
@@ -378,7 +434,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getHorizontalLineChar(): string
+    public function horizontalLineChar(): string
     {
         return $this->horizontalLineChar;
     }
@@ -388,7 +444,7 @@ class AnalyzerConfig
      *
      * @return string
      */
-    public function getVerticalLineChar(): string
+    public function verticalLineChar(): string
     {
         return $this->verticalLineChar;
     }

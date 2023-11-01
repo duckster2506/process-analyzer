@@ -5,9 +5,7 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\Utils;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerEntry;
-use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerEntryTest extends TestCase

@@ -5,6 +5,7 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerConfig;
 use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckster\Analyzer\Tests\Config\DisableConfig;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerTest extends TestCase
@@ -13,6 +14,27 @@ class AnalyzerTest extends TestCase
     {
         parent::setUp();
         Analyzer::clear();
+        Analyzer::tryToInit(new AnalyzerConfig());
+    }
+
+    public function testCanBeDisabled(): void
+    {
+        // Config
+        Analyzer::tryToInit(new DisableConfig());
+        // Create Profile
+        $profile = Analyzer::profile("Profile");
+
+        // No Profile is created
+        $this->assertEmpty(Analyzer::getProfiles());
+        // Return null
+        $this->assertNull($profile);
+
+        // Create Profile
+        $profile = Analyzer::startProfile("Profile");
+        // No Profile is created
+        $this->assertEmpty(Analyzer::getProfiles());
+        // Return null
+        $this->assertNull($profile);
     }
 
     public function testCanTakeSnapshotBefore(): void
@@ -165,41 +187,101 @@ class AnalyzerTest extends TestCase
         $this->assertTrue(Analyzer::getProfiles()["Test stop"]->get($uid)->isStopped());
     }
 
-//    public function testCanStartMultipleRecordingForProfiles(): void
-//    {
-//        Analyzer::clear();
-//        // Check if Analyzer's Profiles size is 0
-//        $this->assertEmpty(Analyzer::getProfiles());
-//
-//        for ($i = 0; $i < 10; $i++) {
-//            // Profile name
-//            $profileName = "Profile " . $i;
-//
-//            for ($j = 0; $j < 10; $j++) {
-//                // Record name
-//                $recordName = "Testing " . $i . "-" . $j;
-//
-//                // Start recording
-//                $uid = Analyzer::startProfile($profileName, $recordName);
-//
-//                // Check Profile has +1 Record
-//                $this->assertCount($j + 1, Analyzer::getProfiles()[$profileName]->getRecords());
-//                // Check Record name is Testing
-//                $this->assertSame($recordName, Analyzer::getProfiles()[$profileName]->get($uid)->getName());
-//                // Check if Record is not accidentally stopped after starting
-//                $this->assertFalse(Analyzer::getProfiles()[$profileName]->get($uid)->isStopped());
-//            }
-//
-//            // Check if Analyzer will auto create a Profile if it wasn't created
-//            $this->assertCount($i + 1, Analyzer::getProfiles());
-//            // Check Profile name
-//            $this->assertSame($profileName, Analyzer::getProfiles()[$profileName]->getName());
-//        }
-//    }
+    /**
+     * This scenario just for testing, that's why it's slow
+     *
+     * @return void
+     */
+    public function testCanStartMultipleRecordingForProfiles(): void
+    {
+        Analyzer::clear();
+        // Check if Analyzer's Profiles size is 0
+        $this->assertEmpty(Analyzer::getProfiles());
 
-//    public function testCanBeFlushed()
-//    {
-//        $class = AnalysisRecord::class;
-//        Utils::rawLog($class);
-//    }
+        for ($i = 0; $i < 5; $i++) {
+            // Profile name
+            $profileName = "Profile " . $i;
+
+            for ($j = 0; $j < 5; $j++) {
+                // Record name
+                $recordName = "Testing " . $i . "-" . $j;
+
+                // Start recording
+                $uid = Analyzer::startProfile($profileName, $recordName);
+
+                // Check Profile has +1 Record
+                $this->assertCount($j + 1, Analyzer::getProfiles()[$profileName]->getRecords());
+                // Check Record name is Testing
+                $this->assertSame($recordName, Analyzer::getProfiles()[$profileName]->get($uid)->getName());
+                // Check if Record is not accidentally stopped after starting
+                $this->assertFalse(Analyzer::getProfiles()[$profileName]->get($uid)->isStopped());
+            }
+
+            // Check if Analyzer will auto create a Profile if it wasn't created
+            $this->assertCount($i + 1, Analyzer::getProfiles());
+            // Check Profile name
+            $this->assertSame($profileName, Analyzer::getProfiles()[$profileName]->getName());
+        }
+    }
+
+    public function testCanFlush()
+    {
+        // Remove file
+        if (file_exists("logs/log.txt")) {
+            unlink("logs/log.txt");
+        }
+        // Try to flush without any Profile
+        Analyzer::flush();
+
+        // Not thing happen and file will not be printed
+        $this->assertFalse(file_exists("logs/log.txt"));
+
+        // Create 2 Profile
+        Analyzer::profile("Another");
+        $uid1 = Analyzer::profile("Profile")->start("Record 1");
+        $uid2 = Analyzer::profile("Profile")->start("Record 2");
+        Analyzer::profile("Profile")->stop();
+        $uid3 = Analyzer::profile("Profile")->start("Record 3");
+        Analyzer::profile("Profile")->stop($uid1);
+        Analyzer::profile("Profile")->stop($uid3);
+        // Flush
+        Analyzer::flush("Profile");
+
+        // File is printed
+        $this->assertTrue(file_exists("logs/log.txt"));
+        // Only "Profile" is flush and delete
+        $this->assertArrayHasKey("Another", Analyzer::getProfiles());
+
+        // Flush all
+        Analyzer::flush();
+
+        // All Profile is deleted
+        $this->assertEmpty(Analyzer::getProfiles());
+    }
+
+    public function testCanNotFlushWhenDisabled(): void
+    {
+        // Try to remove file
+        if (file_exists("logs/log.txt")) {
+            unlink("logs/log.txt");
+        }
+
+        // Create Profile
+        $uid1 = Analyzer::profile("Profile")->start("Record 1");
+        $uid2 = Analyzer::profile("Profile")->start("Record 2");
+        Analyzer::profile("Profile")->stop();
+        $uid3 = Analyzer::profile("Profile")->start("Record 3");
+        Analyzer::profile("Profile")->stop($uid1);
+        Analyzer::profile("Profile")->stop($uid3);
+
+        // Config
+        Analyzer::tryToInit(new DisableConfig());
+        // Flush
+        Analyzer::flush("Profile");
+
+        // File is not printed since Analyzer is disabled
+        $this->assertFalse(file_exists("logs/log.txt"));
+        // Profile "Profile" is not flushed
+        $this->assertArrayHasKey("Profile", Analyzer::getProfiles());
+    }
 }
