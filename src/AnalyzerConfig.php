@@ -84,7 +84,7 @@ class AnalyzerConfig
     /**
      * @var string Unit of time
      */
-    protected string $timeUnit = "ms";
+    protected string $timeUnit = "ns";
 
     /**
      * @var mixed Diff time formatter
@@ -293,9 +293,9 @@ class AnalyzerConfig
         };
 
         $unit = match (strtolower($this->timeUnit)) {
-            "nanosecond" => "ns",
-            "microsecond" => "μs",
-            "second" => "s",
+            "ns", "nanosecond" => "ns",
+            "μs", "microsecond" => "μs",
+            "s", "second" => "s",
             default => "ms"
         };
 
@@ -330,10 +330,10 @@ class AnalyzerConfig
         };
 
         $unit = match (strtolower($this->memUnit)) {
-            "byte" => "b",
-            "megabyte" => "mb",
-            "gigabyte" => "gb",
-            default => "kb"
+            "b", "byte" => "b",
+            "kb", "kilobyte" => "kb",
+            "gb", "gigabyte" => "gb",
+            default => "mb"
         };
 
         return round($value / $offset, 3) . " " . strtoupper($unit);
@@ -448,4 +448,10 @@ class AnalyzerConfig
     {
         return $this->verticalLineChar;
     }
+
+    // ***************************************
+    // Printer's hooks
+    // ***************************************
+
+
 }

@@ -26,6 +26,11 @@ class AnalysisProfile implements IAProfile
      */
     private array $activeIds;
 
+    /**
+     * @var array Stopped Records
+     */
+    private array $stopped;
+
     // ***************************************
     // Public API
     // ***************************************
@@ -38,6 +43,7 @@ class AnalysisProfile implements IAProfile
         $this->name = $name;
         $this->records = [];
         $this->activeIds = [];
+        $this->stopped = [];
     }
 
     /**
@@ -58,12 +64,15 @@ class AnalysisProfile implements IAProfile
     public static function setupRecordRelation(IARecord $record, array $profiles): void
     {
         foreach ($profiles as $profile) {
-            // Iterate through each Profile's active Record
-            foreach ($profile->activeIds as $activeId => $value) {
-                // Check if $activeId exists in $records
-                if (array_key_exists($activeId, $profile->records)) {
-                    // Add $record to activeIds relation list
-                    $profile->records[$activeId]->establishRelation($record);
+            // Check if Profile is active
+            if ($profile->isActive()) {
+                // Iterate through each Profile's active Record
+                foreach ($profile->activeIds as $activeId => $value) {
+                    // Check if $activeId exists in $records
+                    if (array_key_exists($activeId, $profile->records)) {
+                        // Add $record to activeIds relation list
+                        $profile->records[$activeId]->establishRelation($record);
+                    }
                 }
             }
         }
@@ -126,6 +135,7 @@ class AnalysisProfile implements IAProfile
         if (is_null($output)) return null;
         // Remove this out of active list
         unset($this->activeIds[$uid]);
+        $this->stopped[$uid] = true;
 
         // stop
         return $output->stop();

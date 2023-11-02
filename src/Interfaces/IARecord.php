@@ -57,6 +57,13 @@ interface IARecord
     public function diffTime(): float;
 
     /**
+     * Get the actual diff time (exclude relation)
+     *
+     * @return float
+     */
+    public function actualTime(): float;
+
+    /**
      * Get the preparation mem to start this Record
      *
      * @return int
@@ -83,6 +90,13 @@ interface IARecord
      * @return int
      */
     public function diffMem(): int;
+
+    /**
+     * Get the actual diff mem (exclude relation)
+     *
+     * @return int
+     */
+    public function actualMem(): int;
 
     /**
      * Get Record's UID

@@ -26,10 +26,28 @@ class AnalyzerEntry
     // Public API
     // ***************************************
 
-    public function __construct(array $snapshot, IAProfile $profile)
+    /**
+     * Constructor
+     *
+     * @param IAProfile $profile
+     */
+    public function __construct(IAProfile $profile)
+    {
+        $this->profile = $profile;
+        $this->snapshot = [];
+    }
+
+    /**
+     * Prepare Entry
+     *
+     * @param array $snapshot
+     * @return AnalyzerEntry
+     */
+    public function prepare(array $snapshot): AnalyzerEntry
     {
         $this->snapshot = $snapshot;
-        $this->profile = $profile;
+
+        return $this;
     }
 
     /**
@@ -43,15 +61,8 @@ class AnalyzerEntry
         // Create a Record and set pre snapshot
         $record = AnalysisRecord::open(Analyzer::getTitle($title))->setPreStartSnapshot($this->snapshot);
 
-        // Get Analyzer's Profile
-        $activeProfile = Analyzer::getProfiles();
-        if (method_exists(AnalysisProfile::class, 'isActive')) {
-            // Filter active Profile only
-            $activeProfile = array_filter(Analyzer::getProfiles(), fn($profile) => $profile->isActive());
-        }
-
         // Add Record to Profile and start recording
-        return $this->profile->start($record, $activeProfile)->getUID();
+        return $this->profile->start($record, Analyzer::getProfiles())->getUID();
     }
 
     /**
@@ -62,14 +73,12 @@ class AnalyzerEntry
      */
     public function stop(?string $uid = null): void
     {
-        // Take snapshot
-        $snapshot = Analyzer::takeSnapshot();
         // Get $record
         $record = is_null($uid) ? $this->profile->getLatestActiveRecord() : $this->profile->get($uid);
         // Check if $record is null or is stopped
         if (is_null($record) || $record->isStopped()) return;
         // Set pre stop snapshot
-        $record->setPreStopSnapshot($snapshot);
+        $record->setPreStopSnapshot($this->snapshot);
 
         // Stop
         $this->profile->stop($record->getUID());

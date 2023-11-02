@@ -2,6 +2,7 @@
 
 namespace Duckster\Analyzer\Tests;
 
+use Duckster\Analyzer\AnalyzerConfig;
 use Duckster\Analyzer\Utils;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerEntry;
@@ -13,6 +14,7 @@ class AnalyzerEntryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Analyzer::tryToInit(new AnalyzerConfig());
         Analyzer::clear();
     }
 

@@ -118,8 +118,8 @@ class AnalysisPrinter extends IAPrinter
         $output = [
             'uid' => $record->getUID(),
             'name' => $record->getName(),
-            'time' => Analyzer::config()->timeFormatter($record->diffTime()),
-            'memory' => Analyzer::config()->memFormatter($record->diffMem())
+            'time' => Analyzer::config()->timeFormatter($record->actualTime()),
+            'memory' => Analyzer::config()->memFormatter($record->actualMem())
         ];
 
         // Skip UID column
@@ -210,7 +210,7 @@ class AnalysisPrinter extends IAPrinter
         $this->content =
             $profile->getName() . " " . str_repeat("-", 20) . PHP_EOL .
             $this->content .
-            str_repeat("-", 20 + strlen($profile->getName())) . PHP_EOL;
+            str_repeat("-", 20 + strlen($profile->getName() . " ")) . PHP_EOL;
     }
 
     /**

@@ -64,19 +64,19 @@ class AnalysisPrinterTest extends TestCase
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getUID();
             $data[] = $record->getName();
-            $data[] = str_pad((new AnalyzerConfig())->timeFormatter($record->diffTime()), 8, " ", STR_PAD_LEFT);
-            $data[] = str_pad((new AnalyzerConfig())->memFormatter($record->diffMem()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad((new AnalyzerConfig())->timeFormatter($record->actualTime()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad((new AnalyzerConfig())->memFormatter($record->actualMem()), 7, " ", STR_PAD_LEFT);
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
-            "╭───────────────┬──────────┬──────────┬──────────╮" . PHP_EOL .
-            "│ Uid           │ Name     │ Time     │ Memory   │" . PHP_EOL .
-            "├───────────────┼──────────┼──────────┼──────────┤" . PHP_EOL .
+            "╭───────────────┬──────────┬──────────┬─────────╮" . PHP_EOL .
+            "│ Uid           │ Name     │ Time     │ Memory  │" . PHP_EOL .
+            "├───────────────┼──────────┼──────────┼─────────┤" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
-            "╰───────────────┴──────────┴──────────┴──────────╯" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "╰───────────────┴──────────┴──────────┴─────────╯" . PHP_EOL .
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -99,19 +99,19 @@ class AnalysisPrinterTest extends TestCase
         $data = [];
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getName();
-            $data[] = str_pad((new AnalyzerConfig())->timeFormatter($record->diffTime()), 8, " ", STR_PAD_LEFT);
-            $data[] = str_pad((new AnalyzerConfig())->memFormatter($record->diffMem()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad((new AnalyzerConfig())->timeFormatter($record->actualTime()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad((new AnalyzerConfig())->memFormatter($record->actualMem()), 7, " ", STR_PAD_LEFT);
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
-            "╭──────────┬──────────┬──────────╮" . PHP_EOL .
-            "│ Name     │ Time     │ Memory   │" . PHP_EOL .
-            "├──────────┼──────────┼──────────┤" . PHP_EOL .
+            "╭──────────┬──────────┬─────────╮" . PHP_EOL .
+            "│ Name     │ Time     │ Memory  │" . PHP_EOL .
+            "├──────────┼──────────┼─────────┤" . PHP_EOL .
             "│ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │" . PHP_EOL .
-            "╰──────────┴──────────┴──────────╯" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "╰──────────┴──────────┴─────────╯" . PHP_EOL .
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -135,8 +135,8 @@ class AnalysisPrinterTest extends TestCase
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getUID();
             $data[] = $record->getName();
-            $data[] = (new RawPrintConfig())->timeFormatter($record->diffTime());
-            $data[] = (new RawPrintConfig())->memFormatter($record->diffMem());
+            $data[] = (new RawPrintConfig())->timeFormatter($record->actualTime());
+            $data[] = (new RawPrintConfig())->memFormatter($record->actualMem());
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
@@ -149,7 +149,7 @@ class AnalysisPrinterTest extends TestCase
             "[%s] %s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
             "	Memory ⇒ [%s]" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -172,8 +172,8 @@ class AnalysisPrinterTest extends TestCase
         $data = [];
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getName();
-            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->diffTime());
-            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->diffMem());
+            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->actualTime());
+            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->actualMem());
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
@@ -186,7 +186,7 @@ class AnalysisPrinterTest extends TestCase
             "%s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
             "	Memory ⇒ [%s]" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -210,15 +210,15 @@ class AnalysisPrinterTest extends TestCase
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getUID();
             $data[] = $record->getName();
-            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->diffTime());
-            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->diffMem());
+            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->actualTime());
+            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->actualMem());
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
             "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
             "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
             "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -241,15 +241,15 @@ class AnalysisPrinterTest extends TestCase
         $data = [];
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getName();
-            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->diffTime());
-            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->diffMem());
+            $data[] = (new RawPrintHideUIDConfig())->timeFormatter($record->actualTime());
+            $data[] = (new RawPrintHideUIDConfig())->memFormatter($record->actualMem());
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
             "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
             "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
             "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "---------------------------" . PHP_EOL,
+            "----------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -274,19 +274,19 @@ class AnalysisPrinterTest extends TestCase
         foreach ($profile->getRecords() as $record) {
             $data[] = $record->getUID();
             $data[] = $record->getName();
-            $data[] = str_pad($config->timeFormatter($record->diffTime()), 8, " ", STR_PAD_LEFT);
-            $data[] = str_pad($config->memFormatter($record->diffMem()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad($config->timeFormatter($record->actualTime()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad($config->memFormatter($record->actualMem()), 7, " ", STR_PAD_LEFT);
         }
         $expected = sprintf("" .
             "%s --------------------" . PHP_EOL .
-            "╭───────────────┬─────────────────────┬──────────┬──────────╮" . PHP_EOL .
-            "│ Uid           │ Name                │ Time     │ Memory   │" . PHP_EOL .
-            "├───────────────┼─────────────────────┼──────────┼──────────┤" . PHP_EOL .
+            "╭───────────────┬─────────────────────┬──────────┬─────────╮" . PHP_EOL .
+            "│ Uid           │ Name                │ Time     │ Memory  │" . PHP_EOL .
+            "├───────────────┼─────────────────────┼──────────┼─────────┤" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
             "│ %s │ %s │ %s │ %s │" . PHP_EOL .
-            "╰───────────────┴─────────────────────┴──────────┴──────────╯" . PHP_EOL .
-            "---------------------------------------" . PHP_EOL,
+            "╰───────────────┴─────────────────────┴──────────┴─────────╯" . PHP_EOL .
+            "----------------------------------------" . PHP_EOL,
             ...$data
         );
 
@@ -297,13 +297,13 @@ class AnalysisPrinterTest extends TestCase
     public function getProfile(): AnalysisProfile
     {
         $uid1 = Analyzer::profile("Profile")->start("Record 1");
-
+        $str1 = str_repeat(" ", 1024);
         $uid2 = Analyzer::profile("Profile")->start("Record 2");
+        $str2 = str_repeat(" ", 1024);
         Analyzer::profile("Profile")->stop();
-
         $uid3 = Analyzer::profile("Profile")->start("Record 3");
         Analyzer::profile("Profile")->stop($uid1);
-
+        $str3 = str_repeat(" ", 1024);
         Analyzer::profile("Profile")->stop($uid3);
 
         return Analyzer::getProfiles()["Profile"];

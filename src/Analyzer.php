@@ -12,14 +12,19 @@ class Analyzer
     // ***************************************
 
     /**
+     * @var AnalyzerConfig|null Config object
+     */
+    private static ?AnalyzerConfig $config = null;
+
+    /**
      * @var IAProfile[] Analyzer profiles
      */
     private static array $profiles = [];
 
     /**
-     * @var AnalyzerConfig|null Config object
+     * @var AnalyzerEntry[] Analyzer entries
      */
-    private static ?AnalyzerConfig $config = null;
+    private static array $entries = [];
 
     // ***************************************
     // Public API
@@ -58,16 +63,18 @@ class Analyzer
      */
     public static function takeSnapshot(bool $beforeCreate = true): array
     {
+        $time = hrtime(true);
         $mem = memory_get_usage();
         $output = [
             'mem' => $mem,
-            'time' => hrtime(true)
+            'time' => $time
         ];
 
         // Get memory at the point before create output
         if ($beforeCreate) return $output;
         // Get memory at the point after create output
         $output['mem'] = memory_get_usage();
+        $output['time'] = hrtime(true);
 
         return $output;
     }
@@ -93,18 +100,20 @@ class Analyzer
         // Take snapshot
         $snapshot = self::takeSnapshot();
 
-        // Check if disabled
-        if (!self::$config->enable()) return null;
         // Try to init
         self::tryToInit();
+        // Check if disabled
+        if (!self::$config->enable()) return null;
 
         // Check if Profile is existing
         if (!self::hasProfile($name)) {
             // Create new Profile
             self::$profiles[$name] = AnalysisProfile::create($name);
+            // Create new AnalysisEntry
+            self::$entries[$name] = new AnalyzerEntry(self::$profiles[$name]);
         }
 
-        return new AnalyzerEntry($snapshot, self::$profiles[$name]);
+        return self::$entries[$name]->prepare($snapshot);
     }
 
     /**
@@ -122,6 +131,8 @@ class Analyzer
 
         // Create Profile
         self::$profiles[$profile->getName()] = $profile;
+        // Create Entry
+        self::$entries[$profile->getName()] = new AnalyzerEntry($profile);
 
         return true;
     }
@@ -139,8 +150,10 @@ class Analyzer
         if (self::hasProfile($name)) {
             // Get reference
             $output = self::$profiles[$name];
-            // Delete
+            // Delete $profile
             unset(self::$profiles[$name]);
+            // Delete $entry
+            unset(self::$entries[$name]);
         }
 
         return $output;
@@ -154,6 +167,7 @@ class Analyzer
     public static function clear(): void
     {
         self::$profiles = [];
+        self::$entries = [];
     }
 
     /**
@@ -233,13 +247,10 @@ class Analyzer
             foreach (array_keys(self::$profiles) as $profileName) {
                 $printerInstance->printProfile(self::popProfile($profileName));
             }
-            // Clear all Profile
-            self::$profiles = [];
         } elseif (self::hasProfile($profileName)) {
             // Pop and print
             $printerInstance->printProfile(self::popProfile($profileName));
         }
-
     }
 
     /**

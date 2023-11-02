@@ -114,13 +114,11 @@ class AnalysisRecord implements IARecord
      */
     public function stop(): AnalysisRecord
     {
-        // Get local pre stop snapshot
-        $preStopSnapshot = Analyzer::takeSnapshot();
         if ($this->status === 2) return $this;
 
         // Check if preStopSnapshot is set
         if ($this->preStopSnapshot['time'] === 0.0) {
-            $this->preStopSnapshot = $preStopSnapshot;
+            $this->preStopSnapshot = Analyzer::takeSnapshot();
         }
 
         // Set status
@@ -140,7 +138,9 @@ class AnalysisRecord implements IARecord
      */
     public function preStartPrepTime(): float
     {
-        return ($this->startSnapshot['time'] ?? 0.0) - ($this->preStartSnapshot['time'] ?? 0.0);
+        if (empty($this->startSnapshot['time']) || empty($this->preStartSnapshot['time'])) return 0.0;
+
+        return $this->startSnapshot['time'] - $this->preStartSnapshot['time'];
     }
 
     /**
@@ -160,7 +160,9 @@ class AnalysisRecord implements IARecord
      */
     public function preStopPrepTime(): float
     {
-        return ($this->stopSnapshot['time'] ?? 0.0) - ($this->preStopSnapshot['time'] ?? 0.0);
+        if (empty($this->stopSnapshot['time']) || empty($this->preStopSnapshot['time'])) return 0.0;
+
+        return $this->stopSnapshot['time'] - $this->preStopSnapshot['time'];
     }
 
     /**
@@ -178,13 +180,25 @@ class AnalysisRecord implements IARecord
     }
 
     /**
+     * Get the actual diff time (exclude all nested Record)
+     *
+     * @return float
+     */
+    public function actualTime(): float
+    {
+        return $this->calculateActual('time', 0.0);
+    }
+
+    /**
      * Get the preparation mem to start this Record
      *
      * @return int
      */
     public function preStartPrepMem(): int
     {
-        return ($this->startSnapshot['mem'] ?? 0) - ($this->preStartSnapshot['mem'] ?? 0);
+        if (empty($this->startSnapshot['mem']) || empty($this->preStartSnapshot['mem'])) return 0;
+
+        return $this->startSnapshot['mem'] - $this->preStartSnapshot['mem'];
     }
 
     /**
@@ -204,7 +218,9 @@ class AnalysisRecord implements IARecord
      */
     public function preStopPrepMem(): int
     {
-        return ($this->stopSnapshot['mem'] ?? 0) - ($this->preStopSnapshot['mem'] ?? 0);
+        if (empty($this->stopSnapshot['mem']) || empty($this->preStopSnapshot['mem'])) return 0;
+
+        return $this->stopSnapshot['mem'] - $this->preStopSnapshot['mem'];
     }
 
     /**
@@ -219,6 +235,16 @@ class AnalysisRecord implements IARecord
         }
 
         return $this->preStopSnapshot['mem'] - $this->startSnapshot['mem'];
+    }
+
+    /**
+     * Get the actual diff mem (exclude all nested Record)
+     *
+     * @return int
+     */
+    public function actualMem(): int
+    {
+        return $this->calculateActual('mem', 0);
     }
 
     /**
@@ -427,13 +453,18 @@ class AnalysisRecord implements IARecord
     public function __toString(): string
     {
         return "{" .
-            "uid: " . $this->getUID() . "," .
-            " startTime: " . $this->getStartTime() . "," .
-            " stopTime: " . $this->getStopTime() . "," .
-            " startMem: " . $this->getStartMem() . " bytes," .
-            " stopMem: " . $this->getStopMem() . " bytes," .
-            " status: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Stopped" : "Pending")) .
-            "}";
+            "\n\tuid: " . $this->getUID() . "," .
+            "\n\tpreStartMem: " . $this->preStartSnapshot["mem"] . "," .
+            "\n\tStartMem: " . $this->startSnapshot["mem"] . "," .
+            "\n\tpreStopMem: " . $this->preStopSnapshot["mem"] . "," .
+            "\n\tStopMem: " . $this->stopSnapshot["mem"] . "," .
+            "\n\tpreStartPrepMem: " . $this->preStartPrepMem() . "," .
+            "\n\tprepMem: " . $this->prepMem() . "," .
+            "\n\tpreStopPrepMem: " . $this->preStopPrepMem() . "," .
+            "\n\tdiffMem: " . $this->diffMem() . "," .
+            "\n\tactualMem: " . $this->actualMem() . "," .
+            "\n\tstatus: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Stopped" : "Pending")) .
+            "\n}";
     }
 
     // ***************************************
@@ -450,10 +481,49 @@ class AnalysisRecord implements IARecord
         // Iterate through each relation
         foreach ($this->relations as $relation) {
             // Check if $owner try to stop while $target is not stopped
-            if ($relation->getOwner() === $this && $relation->getTarget()->isStarted()) {
+            if ($relation->getOwner()->uid === $this->uid && $relation->getTarget()->isStarted()) {
                 // Mark relation as intersect
                 $relation->intersect();
             }
         }
+    }
+
+    /**
+     * Common logic for calculate actual data
+     *
+     * @param string $key
+     * @param int|float $init
+     * @return int|float
+     */
+    private function calculateActual(string $key, int|float $init): int|float
+    {
+        // Capitalize $key
+        $capitalized = ucfirst($key);
+        // Get name of "diff" method
+        $diffMethod = "diff" . $capitalized;
+        // Get name of "prep" method
+        $prepMethod = "prep" . $capitalized;
+        // Get the name of preStartPrep method
+        $preStartPrepMethod = "preStartPrep" . $capitalized;
+        // Get the name of preStopPrep method
+        $preStopPrepMethod = "preStopPrep" . $capitalized;
+
+        // Iterate through each relation
+        foreach ($this->relations as $relation) {
+            // If $this is the owner of relation and relation's type is ownership
+            if (!$relation->isIntersect() && $relation->getOwner()->uid === $this->uid) {
+                // This means $relation->target prep time should be excluded
+                $init += $relation->getTarget()->$prepMethod();
+            } else if ($relation->isIntersect()) {
+                // If relation's type is intersect, need to check if $this is the owner or target of the relation
+                $init += $relation->getOwner()->uid === $this->uid
+                    // If $this is the owner, exclude $relation->target preStart prep time out
+                    ? $relation->getTarget()->$preStartPrepMethod()
+                    // If $this is the target, exclude $relation->owner preStop prep time out
+                    : $relation->getOwner()->$preStopPrepMethod();
+            }
+        }
+
+        return $this->$diffMethod() - $init;
     }
 }

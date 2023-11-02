@@ -415,6 +415,83 @@ class AnalysisRecordTest extends TestCase
         $this->assertGreaterThanOrEqual(2000, $record->diffTime());
     }
 
+    public function testCanCalculateActualTimeThatExcludeSelfAndOwnershipRelationPrepTime(): void
+    {
+        // Create owner and start
+        $owner = AnalysisRecord::open("Owner")
+            ->setPreStartSnapshot(Analyzer::takeSnapshot())
+            ->start();
+
+        // This snapshot will mark the preparation time of target before start
+        $target = AnalysisRecord::open("Target")->setPreStartSnapshot(Analyzer::takeSnapshot());
+        // Add relation
+        $owner->establishRelation($target);
+        // Sleep
+        sleep(1);
+        // Start
+        $target->start();
+
+        // This snapshot will mark the preparation time of target before stop
+        $target->setPreStopSnapshot(Analyzer::takeSnapshot());
+        // Sleep
+        sleep(1);
+        // Stop
+        $target->stop();
+
+        // Stop owner
+        $owner
+            ->setPreStopSnapshot(Analyzer::takeSnapshot())
+            ->stop();
+
+        // Actual execution time of $owner will lower than 2s
+        $this->assertLessThan(2, $owner->actualTime() / 1e+9);
+        // While diff time is higher than 2s
+        $this->assertGreaterThanOrEqual(2, $owner->diffTime() / 1e+9);
+        // Actual execution time of $owner will be diffTime and exclude all relation's prep time
+        $this->assertEquals($owner->diffTime() - $target->preStartPrepTime() - $target->preStopPrepTime(), $owner->actualTime());
+    }
+
+    public function testCanCalculateActualTimeThatExcludeSelfAndIntersectRelationPrepTime(): void
+    {
+        // Create owner and start
+        $owner = AnalysisRecord::open("Owner")
+            ->setPreStartSnapshot(Analyzer::takeSnapshot())
+            ->start();
+
+        // This snapshot will mark the preparation time of target before start
+        $target = AnalysisRecord::open("Target")->setPreStartSnapshot(Analyzer::takeSnapshot());
+
+        // Add relation
+        $owner->establishRelation($target);
+        // Sleep
+        sleep(1);
+        // Start
+        $target->start();
+
+        // This snapshot will mark the preparation time of owner before stop
+        $owner->setPreStopSnapshot(Analyzer::takeSnapshot());
+        // Sleep
+        sleep(1);
+        // Stop owner
+        $owner->stop();
+
+        // Stop target
+        $target->setPreStopSnapshot(Analyzer::takeSnapshot())->stop();
+
+        // Actual execution time of $owner will lower than 1s
+        $this->assertLessThan(1, $owner->actualTime() / 1e+9);
+        // While diff time is higher than 1s
+        $this->assertGreaterThanOrEqual(1, $owner->diffTime() / 1e+9);
+        // Actual execution time of $target will lower than 1s
+        $this->assertLessThan(1, $target->actualTime() / 1e+9);
+        // While diff time is higher than 1s
+        $this->assertGreaterThanOrEqual(1, $target->diffTime() / 1e+9);
+        // Actual execution time of $owner will be diffTime and exclude $target preStart prep time
+        $this->assertEquals($owner->diffTime() - $target->preStartPrepTime(), $owner->actualTime());
+        // Actual execution time of $target will be diffTime and exclude $owner preStop prep time
+        $this->assertEquals($target->diffTime() - $owner->preStopPrepTime(), $target->actualTime());
+    }
+
     public function testCanCalculatePrepEmMem(): void
     {
         // Warmup
@@ -457,15 +534,6 @@ class AnalysisRecordTest extends TestCase
 
         // Check if Record's memDiff excludes it mem usage
         $this->assertSame($memDiff, $record->prepMem());
-        // These operation is to make sure $str[x] will be kept out of GC
-        $this->assertIsString($str1);
-        $this->assertIsString($str2);
-        $this->assertIsString($str3);
-        $this->assertIsArray($rep1);
-        $this->assertIsArray($rep2);
-        $this->assertIsArray($rep3);
-        $this->assertIsArray($rep4);
-        $this->assertIsArray($rep5);
     }
 
     public function testCanCalculateEmMemDiff(): void
@@ -486,8 +554,6 @@ class AnalysisRecordTest extends TestCase
 
         // Check Record emMem diff
         $this->assertSame($end - $start, $obj->diffMem());
-        // Just to make sure $str1 equals $str2 and both will be kept out of GC
-        $this->assertSame($str1, $str2);
     }
 
     public function testReturnZeroMemDiffIfNotStopped(): void
@@ -500,8 +566,6 @@ class AnalysisRecordTest extends TestCase
         $this->assertEquals(0, $obj->diffMem());
         // Stop Record
         $obj->stop();
-
-        $this->assertIsString($str);
     }
 
     public function testCanExcludePreStartPreparationMemOutOfMemDiff(): void
@@ -534,10 +598,6 @@ class AnalysisRecordTest extends TestCase
 
         // Check if Record's memDiff excludes it mem usage
         $this->assertSame($memDiff, $record->diffMem());
-        // These operation is to make sure $str[x] will be kept out of GC
-        $this->assertIsString($str1);
-        $this->assertIsString($str2);
-        $this->assertIsString($str3);
     }
 
     public function testCanExcludePreStopPreparationMemOutOfMemDiff(): void
@@ -573,10 +633,6 @@ class AnalysisRecordTest extends TestCase
 
         // Check if Record's memDiff excludes it mem usage
         $this->assertSame($memDiff, $record->diffMem());
-        // These operation is to make sure $str[x] will be kept out of GC
-        $this->assertIsString($str1);
-        $this->assertIsString($str2);
-        $this->assertIsString($str3);
     }
 
     public function testCanExcludePreparationMemOutOfMemDiff(): void
@@ -614,10 +670,85 @@ class AnalysisRecordTest extends TestCase
 
         // Check if Record's memDiff excludes it mem usage
         $this->assertSame($memDiff, $record->diffMem());
-        // These operation is to make sure $str[x] will be kept out of GC
-        $this->assertSame($str1, $str2);
-        $this->assertSame($str2, $str3);
-        $this->assertSame($str3, $str4);
+    }
+
+    public function testCanCalculateActualTimeThatExcludeSelfAndOwnershipRelationPrepMem(): void
+    {
+        // Create owner and start
+        $owner = AnalysisRecord::open("Owner")
+            ->setPreStartSnapshot(Analyzer::takeSnapshot())
+            ->start();
+
+        // This snapshot will mark the preparation time of target before start
+        $snapshot = Analyzer::takeSnapshot();
+        $target = AnalysisRecord::open("Target")->setPreStartSnapshot($snapshot);
+        // Add relation
+        $owner->establishRelation($target);
+        // Sleep
+        $str1 = str_repeat(" ", 1024);
+        // Start
+        $target->start();
+
+        // This snapshot will mark the preparation time of target before stop
+        $target->setPreStopSnapshot(Analyzer::takeSnapshot());
+        // Sleep
+        $str2 = str_repeat(" ", 1024);
+        // Stop
+        $target->stop();
+
+        // Stop owner
+        $owner
+            ->setPreStopSnapshot(Analyzer::takeSnapshot())
+            ->stop();
+
+        // Actual execution mem of $owner is 0
+        $this->assertEquals(0, $owner->actualMem());
+        // While diff mem is higher than 0
+        $this->assertGreaterThan(0, $owner->diffMem());
+        // Actual execution mem of $owner will be diffMem and exclude $target prep mem
+        $this->assertEquals($owner->diffMem() - $target->preStartPrepMem() - $target->preStopPrepMem(), $owner->actualMem());
+    }
+
+    public function testCanCalculateActualTimeThatExcludeSelfAndIntersectRelationPrepMem(): void
+    {
+        // Create owner and start
+        $owner = AnalysisRecord::open("Owner")
+            ->setPreStartSnapshot(Analyzer::takeSnapshot())
+            ->start();
+
+        // This snapshot will mark the preparation time of target before start
+        $snapshot = Analyzer::takeSnapshot();
+        $target = AnalysisRecord::open("Target")->setPreStartSnapshot($snapshot);
+
+        // Add relation
+        $owner->establishRelation($target);
+        // Sleep
+        $str1 = str_repeat(" ", 1024);
+        // Start
+        $target->start();
+
+        // This snapshot will mark the preparation time of owner before stop
+        $owner->setPreStopSnapshot(Analyzer::takeSnapshot());
+        // Sleep
+        $str2 = str_repeat(" ", 1024);
+        // Stop owner
+        $owner->stop();
+
+        // Stop target
+        $target->setPreStopSnapshot(Analyzer::takeSnapshot())->stop();
+
+        // Actual execution time of $owner is 0
+        $this->assertEquals(0, $owner->actualMem());
+        // While diff time is higher than 0
+        $this->assertGreaterThan(0, $owner->diffMem());
+        // Actual execution time of $target is 0
+        $this->assertEquals(0, $target->actualMem());
+        // While diff time is higher than 0
+        $this->assertGreaterThan(0, $target->diffMem());
+        // Actual execution time of $owner will be diffTime and exclude $target preStart prep time
+        $this->assertEquals($owner->diffMem() - $target->preStartPrepMem(), $owner->actualMem());
+        // Actual execution time of $target will be diffTime and exclude $owner preStop prep time
+        $this->assertEquals($target->diffMem() - $owner->preStopPrepMem(), $target->actualMem());
     }
 
     public function testTimeDiffError(): void
