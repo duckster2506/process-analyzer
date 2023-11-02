@@ -21,8 +21,7 @@
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.35",
     "phpunit/phpunit": "10",
-    "vimeo/psalm": "^6.0@dev",
-    "phpbench/phpbench": "^1.2@dev"
+    "vimeo/psalm": "^6.0@dev"
   },
   "minimum-stability": "dev",
   "autoload": {
@@ -38,6 +37,6 @@
   "scripts": {
     "psalm": "vendor/bin/psalm -c psalm.xml",
     "test": "vendor/bin/phpunit --testsuite=Suite --testdox --colors=always",
-    "test-coverage": "vendor/bin/phpunit --coverage-html=build"
+    "test-coverage": "vendor/bin/phpunit --coverage-html logs"
   }
 }

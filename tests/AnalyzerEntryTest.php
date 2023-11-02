@@ -106,7 +106,6 @@ class AnalyzerEntryTest extends TestCase
         // ***********************
         // Check Record 1
         // ***********************
-        Utils::rawLog($record1);
         // Record is stopped
         $this->assertTrue($record1->isStopped());
         // Record has 2 relation
@@ -175,7 +174,6 @@ class AnalyzerEntryTest extends TestCase
         // ***********************
         // Check Record 1
         // ***********************
-        Utils::rawLog($record1);
         // Record is stopped
         $this->assertTrue($record1->isStopped());
         // Record has 2 relation

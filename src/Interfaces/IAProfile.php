@@ -18,7 +18,7 @@ interface IAProfile
      * Put a Record into Profile. Replace Record if it's UID is already exists
      *
      * @param IARecord $record
-     * @return string
+     * @return IARecord
      */
     public function put(IARecord $record): IARecord;
 

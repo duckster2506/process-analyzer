@@ -198,9 +198,4 @@ class AnalysisProfile implements IAProfile
 
         return $this;
     }
-
-    public function __toString(): string
-    {
-        return "{name: $this->name}";
-    }
 }

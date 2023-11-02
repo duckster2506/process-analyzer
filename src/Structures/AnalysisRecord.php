@@ -62,6 +62,8 @@ class AnalysisRecord implements IARecord
 
     /**
      * Constructor
+     *
+     * @param string $name
      */
     public function __construct(string $name)
     {
@@ -78,7 +80,6 @@ class AnalysisRecord implements IARecord
      * Open a record
      *
      * @param string $name
-     * @param bool $isShared
      * @return AnalysisRecord
      */
     public static function open(string $name): AnalysisRecord
@@ -93,9 +94,9 @@ class AnalysisRecord implements IARecord
     /**
      * Start recording
      *
-     * @return AnalysisRecord
+     * @return IARecord
      */
-    public function start(): AnalysisRecord
+    public function start(): IARecord
     {
         if ($this->status === 1) return $this;
 
@@ -110,9 +111,9 @@ class AnalysisRecord implements IARecord
     /**
      * Stop recording
      *
-     * @return AnalysisRecord
+     * @return IARecord
      */
-    public function stop(): AnalysisRecord
+    public function stop(): IARecord
     {
         if ($this->status === 2) return $this;
 
@@ -388,7 +389,7 @@ class AnalysisRecord implements IARecord
      * @param string $name
      * @return $this
      */
-    public function setName(string $name): AnalysisRecord
+    public function setName(string $name): IARecord
     {
         $this->name = $name;
 
@@ -401,7 +402,7 @@ class AnalysisRecord implements IARecord
      * @param array $snapshot
      * @return $this
      */
-    public function setPreStartSnapshot(array $snapshot): AnalysisRecord
+    public function setPreStartSnapshot(array $snapshot): IARecord
     {
         $this->preStartSnapshot = $snapshot;
 
@@ -414,7 +415,7 @@ class AnalysisRecord implements IARecord
      * @param array $snapshot
      * @return $this
      */
-    public function setPreStopSnapshot(array $snapshot): AnalysisRecord
+    public function setPreStopSnapshot(array $snapshot): IARecord
     {
         $this->preStopSnapshot = $snapshot;
 
@@ -425,9 +426,9 @@ class AnalysisRecord implements IARecord
      * Set start snapshot
      *
      * @param array $snapshot
-     * @return AnalysisRecord
+     * @return IARecord
      */
-    public function setStartSnapshot(array $snapshot): AnalysisRecord
+    public function setStartSnapshot(array $snapshot): IARecord
     {
         $this->startSnapshot = $snapshot;
         return $this;
@@ -437,34 +438,12 @@ class AnalysisRecord implements IARecord
      * Set stop snapshot
      *
      * @param array $snapshot
-     * @return AnalysisRecord
+     * @return IARecord
      */
-    public function setStopSnapshot(array $snapshot): AnalysisRecord
+    public function setStopSnapshot(array $snapshot): IARecord
     {
         $this->stopSnapshot = $snapshot;
         return $this;
-    }
-
-    /**
-     * To string
-     *
-     * @return string
-     */
-    public function __toString(): string
-    {
-        return "{" .
-            "\n\tuid: " . $this->getUID() . "," .
-            "\n\tpreStartMem: " . $this->preStartSnapshot["mem"] . "," .
-            "\n\tStartMem: " . $this->startSnapshot["mem"] . "," .
-            "\n\tpreStopMem: " . $this->preStopSnapshot["mem"] . "," .
-            "\n\tStopMem: " . $this->stopSnapshot["mem"] . "," .
-            "\n\tpreStartPrepMem: " . $this->preStartPrepMem() . "," .
-            "\n\tprepMem: " . $this->prepMem() . "," .
-            "\n\tpreStopPrepMem: " . $this->preStopPrepMem() . "," .
-            "\n\tdiffMem: " . $this->diffMem() . "," .
-            "\n\tactualMem: " . $this->actualMem() . "," .
-            "\n\tstatus: " . ($this->isStarted() ? "Started" : ($this->isStopped() ? "Stopped" : "Pending")) .
-            "\n}";
     }
 
     // ***************************************

@@ -30,6 +30,7 @@ class RecordRelation
     /**
      * Construct an ownership relation
      *
+     * @param AnalysisRecord $owner
      * @param AnalysisRecord $record
      */
     public function __construct(AnalysisRecord $owner, AnalysisRecord $record)

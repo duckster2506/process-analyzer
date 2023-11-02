@@ -3,7 +3,6 @@
 namespace Duckster\Analyzer;
 
 use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Structures\AnalysisRecord;
 
 class AnalyzerEntry
@@ -69,7 +68,7 @@ class AnalyzerEntry
      * Stop recording
      *
      * @param string|null $uid If provided, stop the Record with corresponding UID. Else, stop the last Record in Profile
-     * @return bool
+     * @return void
      */
     public function stop(?string $uid = null): void
     {

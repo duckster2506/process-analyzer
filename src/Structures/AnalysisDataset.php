@@ -22,12 +22,23 @@ class AnalysisDataset
     // Public API
     // ***************************************
 
+    /**
+     * Constructor
+     *
+     * @param int $maxLength
+     */
     public function __construct(int $maxLength)
     {
         $this->maxLength = $maxLength;
         $this->data = [];
     }
 
+    /**
+     * Add data
+     *
+     * @param string $dataPiece
+     * @return void
+     */
     public function add(string $dataPiece): void
     {
         // Get $data length

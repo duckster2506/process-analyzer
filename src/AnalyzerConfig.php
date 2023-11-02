@@ -2,6 +2,9 @@
 
 namespace Duckster\Analyzer;
 
+use Duckster\Analyzer\Interfaces\IAProfile;
+use Duckster\Analyzer\Interfaces\IARecord;
+
 class AnalyzerConfig
 {
     // ***************************************
@@ -84,7 +87,7 @@ class AnalyzerConfig
     /**
      * @var string Unit of time
      */
-    protected string $timeUnit = "ns";
+    protected string $timeUnit = "ms";
 
     /**
      * @var mixed Diff time formatter
@@ -453,5 +456,42 @@ class AnalyzerConfig
     // Printer's hooks
     // ***************************************
 
+    /**
+     * Before modifying Profile
+     *
+     * @param IAProfile $profile
+     * @return void
+     */
+    public function onPreprocessProfile(IAProfile $profile): void
+    {
+    }
 
+    /**
+     * Before modifying Record
+     *
+     * @param IARecord $record
+     * @return void
+     */
+    public function onPreprocessRecord(IARecord $record): void
+    {
+    }
+
+    /**
+     * After converting Record to String
+     * @param string $content
+     * @return void
+     */
+    public function onEachRecordString(string $content): void
+    {
+    }
+
+    /**
+     * Before print Profile's statistic report
+     *
+     * @param string $content
+     * @return void
+     */
+    public function onPrintProfileString(string $content): void
+    {
+    }
 }

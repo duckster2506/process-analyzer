@@ -24,7 +24,7 @@ interface IARecord
     /**
      * Stop recording.
      *
-     * @return IARecord|null
+     * @return IARecord
      */
     public function stop(): IARecord;
 

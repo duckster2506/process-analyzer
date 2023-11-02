@@ -8,7 +8,7 @@ use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisDataset;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 
-class AnalysisPrinter extends IAPrinter
+class AnalysisPrinter implements IAPrinter
 {
     // ***************************************
     // Properties
@@ -33,6 +33,9 @@ class AnalysisPrinter extends IAPrinter
     // Public API
     // ***************************************
 
+    /**
+     * Constructor
+     */
     public function __construct()
     {
         $this->content = "";
@@ -205,6 +208,12 @@ class AnalysisPrinter extends IAPrinter
             ) . PHP_EOL;
     }
 
+    /**
+     * Wrap report string in Profile string
+     *
+     * @param IAProfile $profile
+     * @return void
+     */
     private function wrapContentInProfile(IAProfile $profile): void
     {
         $this->content =

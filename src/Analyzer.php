@@ -90,7 +90,7 @@ class Analyzer
     }
 
     /**
-     * Get or create a Profile by name
+     * Get an entry of a Profile
      *
      * @param string $name
      * @return AnalyzerEntry|null Return null if disabled

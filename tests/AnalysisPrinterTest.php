@@ -5,8 +5,12 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\AnalysisPrinter;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerConfig;
+use Duckster\Analyzer\Interfaces\IAProfile;
+use Duckster\Analyzer\Interfaces\IARecord;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Tests\Config\HideUIDConfig;
+use Duckster\Analyzer\Tests\Config\Hook1Config;
+use Duckster\Analyzer\Tests\Config\Hook2Config;
 use Duckster\Analyzer\Tests\Config\OneLineConfig;
 use Duckster\Analyzer\Tests\Config\OneLineHideUIDConfig;
 use Duckster\Analyzer\Tests\Config\PrefixSuffixConfig;
@@ -17,6 +21,11 @@ use PHPUnit\Framework\TestCase;
 
 class AnalysisPrinterTest extends TestCase
 {
+    public static $onPreprocessProfile = null;
+    public static $onPreprocessRecord = null;
+    public static $onEachRecordString = null;
+    public static $onPrintProfileString = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -292,6 +301,48 @@ class AnalysisPrinterTest extends TestCase
 
         // Check result
         $this->assertEquals($expected, $this->getFileContent());
+    }
+
+    public function test_can_use_hook_for_prettyPrint(): void
+    {
+        // Config
+        $config = new Hook1Config();
+        Analyzer::tryToInit($config);
+        // Create Profile
+        $profile = $this->getProfile();
+        // Create Printer
+        $printer = new AnalysisPrinter();
+        $printer->printProfile($profile);
+
+        // Check if hook onPreprocessProfile is called
+        $this->assertInstanceOf(IAProfile::class, self::$onPreprocessProfile);
+        // Check if hook onPreprocessRecord is called
+        $this->assertInstanceOf(IARecord::class, self::$onPreprocessRecord);
+        // Check if hook onEachRecordString is not called since prettyPrint is enabled
+        $this->assertNull(self::$onEachRecordString);
+        // Check if hook onPrintProfileString is called
+        $this->assertIsString(self::$onPrintProfileString);
+    }
+
+    public function test_can_use_hook_for_non_prettyPrint(): void
+    {
+        // Config
+        $config = new Hook2Config();
+        Analyzer::tryToInit($config);
+        // Create Profile
+        $profile = $this->getProfile();
+        // Create Printer
+        $printer = new AnalysisPrinter();
+        $printer->printProfile($profile);
+
+        // Check if hook onPreprocessProfile is called
+        $this->assertInstanceOf(IAProfile::class, self::$onPreprocessProfile);
+        // Check if hook onPreprocessRecord is called
+        $this->assertInstanceOf(IARecord::class, self::$onPreprocessRecord);
+        // Check if hook onEachRecordString is not called since prettyPrint is disabled
+        $this->assertIsString(self::$onEachRecordString);
+        // Check if hook onPrintProfileString is called
+        $this->assertIsString(self::$onPrintProfileString);
     }
 
     public function getProfile(): AnalysisProfile

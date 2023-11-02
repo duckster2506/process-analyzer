@@ -2,7 +2,6 @@
 
 namespace Duckster\Analyzer\Tests\Structures;
 
-use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\RecordRelation;
 use PHPUnit\Framework\TestCase;
 use Duckster\Analyzer\Structures\AnalysisRecord;
