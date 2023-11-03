@@ -122,7 +122,8 @@ class AnalysisPrinter implements IAPrinter
             'uid' => $record->getUID(),
             'name' => $record->getName(),
             'time' => Analyzer::config()->timeFormatter($record->actualTime()),
-            'memory' => Analyzer::config()->memFormatter($record->actualMem())
+            'memory' => Analyzer::config()->memFormatter($record->actualMem()),
+            ...$record->getExtras()
         ];
 
         // Skip UID column
@@ -160,10 +161,11 @@ class AnalysisPrinter implements IAPrinter
         if (Analyzer::config()->showUID()) $line[0] = sprintf("[%s] ", $data['uid']);
         // Name
         $line[0] .= sprintf("%s:", $data['name']);
-        // Execution time
-        $line[] = sprintf("Time ⇒ [%s];", $data['time']);
-        // Execution memory
-        $line[] = sprintf("Memory ⇒ [%s]", $data['memory']);
+        // Iterate through each field in $data
+        foreach ($data as $field => $value) {
+            // Data as string
+            $line[] = sprintf("%s ⇒ [%s];", ucfirst($field), $data[$field] ?? "");
+        }
 
         // Create content
         $content = implode(Analyzer::config()->oneLine() ? " " : (PHP_EOL . "\t"), $line);

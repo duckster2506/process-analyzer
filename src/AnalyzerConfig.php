@@ -26,6 +26,23 @@ class AnalyzerConfig
      */
     protected mixed $defaultRecordGetter = null;
 
+    /**
+     * Profile's extra data
+     *
+     * @var array
+     */
+    protected array $profileExtras = [
+        "Default" => [
+            "peak" => [
+                "handler" => "memory_get_peak_usage",
+                "formatter" => [Utils::class, "appendB"],
+                "start" => true,
+                "stop" => true,
+                "diff" => true
+            ]
+        ]
+    ];
+
     // ***************************************
     // Printer
     // ***************************************
@@ -90,7 +107,7 @@ class AnalyzerConfig
     protected string $timeUnit = "ms";
 
     /**
-     * @var mixed Diff time formatter
+     * @var mixed Time value formatter
      */
     protected mixed $timeFormatter = null;
 
@@ -100,7 +117,7 @@ class AnalyzerConfig
     protected string $memUnit = "KB";
 
     /**
-     * @var mixed Diff memory formatter
+     * @var mixed Memory value formatter
      */
     protected mixed $memFormatter = null;
 
@@ -165,6 +182,16 @@ class AnalyzerConfig
             return call_user_func($this->defaultRecordGetter);
 
         return null;
+    }
+
+    /**
+     * Profile's extra data
+     *
+     * @return array
+     */
+    public function profileExtras(): array
+    {
+        return $this->profileExtras;
     }
 
     /**
@@ -278,7 +305,7 @@ class AnalyzerConfig
     }
 
     /**
-     * Diff time formatter
+     * Time value formatter
      *
      * @param float $value
      * @return mixed
@@ -316,7 +343,7 @@ class AnalyzerConfig
     }
 
     /**
-     * Diff mem formatter
+     * Memory value formatter
      *
      * @return mixed
      */

@@ -4,11 +4,20 @@ namespace Duckster\Analyzer\Tests\Structures;
 
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\Structures\RecordRelation;
+use Duckster\Analyzer\Utils;
 use PHPUnit\Framework\TestCase;
 use Duckster\Analyzer\Structures\AnalysisRecord;
 
 class AnalysisRecordTest extends TestCase
 {
+    private static int $count = 5;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        self::$count = 5;
+    }
+
     public function testCanBeConstructedAndGotten(): void
     {
         // Create instance
@@ -199,6 +208,154 @@ class AnalysisRecordTest extends TestCase
 
         // Check if the $owner and $target has an intersect relation
         $this->assertTrue($owner->getRelations()[0]->isIntersect());
+    }
+
+    public function testCanAddExtrasAtStart(): void
+    {
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "start" => true,
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+Utils::rawLog(print_r($record->getExtras(), true));
+        // This extras will be gotten at start
+        $this->assertArrayHasKey("start count", $record->getExtras());
+        // Check value
+        $this->assertEquals(5, $record->getExtras()["start count"]);
+        // This extras won't be gotten at stop
+        $this->assertArrayNotHasKey("stop count", $record->getExtras());
+    }
+
+    public function testCanAddExtrasAtStop(): void
+    {
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "stop" => true,
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+
+        // This extras won't be gotten at start
+        $this->assertArrayNotHasKey("start count", $record->getExtras());
+        // This extras will be gotten at stop
+        $this->assertArrayHasKey("stop count", $record->getExtras());
+        // Check value
+        $this->assertEquals(5, $record->getExtras()["stop count"]);
+    }
+
+    public function testCanAddExtrasWithDiff(): void
+    {
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "start" => true,
+                "stop" => true,
+                "diff" => true
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+
+        // This extras will be gotten at start
+        $this->assertArrayHasKey("start count", $record->getExtras());
+        // Check value
+        $this->assertEquals(5, $record->getExtras()["start count"]);
+        // This extras will be gotten at stop
+        $this->assertArrayHasKey("stop count", $record->getExtras());
+        // Check value
+        $this->assertEquals(6, $record->getExtras()["stop count"]);
+        // Extras diff between start and stop will be included
+        $this->assertArrayHasKey("diff count", $record->getExtras());
+        // Check value
+        $this->assertEquals(1, $record->getExtras()["diff count"]);
+    }
+
+    public function testCanAddExtrasWithNoDiffIfStartOrStopIsFalse(): void
+    {
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "start" => false,
+                "stop" => true,
+                "diff" => true
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+
+        // No diff if "start" or "stop" is false
+        $this->assertArrayNotHasKey("diff count", $record->getExtras());
+
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "start" => true,
+                "stop" => false,
+                "diff" => true
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+
+        // No diff if "start" or "stop" is false
+        $this->assertArrayNotHasKey("diff count", $record->getExtras());
+    }
+
+    public function testCanAddExtrasWithFormatter(): void
+    {
+        // Get extras
+        $extras = [
+            "count" => [
+                "handler" => [$this, "increaseCount"],
+                "formatter" => [$this, "addPrefix"],
+                "start" => true,
+                "stop" => true,
+                "diff" => true
+            ]
+        ];
+
+        // Create owner
+        $record = AnalysisRecord::open("Record");
+        // Start and stop
+        $record->start($extras)->stop($extras);
+
+        // This extras will be gotten at start
+        $this->assertArrayHasKey("start count", $record->getExtras());
+        // Check value
+        $this->assertEquals("Count: 5", $record->getExtras()["start count"]);
+        // This extras will be gotten at stop
+        $this->assertArrayHasKey("stop count", $record->getExtras());
+        // Check value
+        $this->assertEquals("Count: 6", $record->getExtras()["stop count"]);
+        // Extras diff between start and stop will be included
+        $this->assertArrayHasKey("diff count", $record->getExtras());
+        // Check value
+        $this->assertEquals("Count: 1", $record->getExtras()["diff count"]);
     }
 
     public function testCanCalculatePrepTime(): void
@@ -788,5 +945,15 @@ class AnalysisRecordTest extends TestCase
         // This test will show the error between 2 operation compare to each other
         // The average error between diffs will vary between 0 - 20 μs
         $this->assertLessThanOrEqual(20, $total / 1000);
+    }
+
+    public function increaseCount(): int
+    {
+        return self::$count++;
+    }
+
+    public function addPrefix(int $value): string
+    {
+        return "Count: $value";
     }
 }

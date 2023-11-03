@@ -74,6 +74,7 @@ class AnalysisRecord implements IARecord
         $this->stopSnapshot = ['time' => 0.0, 'mem' => 0];
         $this->status = 0;
         $this->relations = [];
+        $this->extras = [];
     }
 
     /**
@@ -94,14 +95,17 @@ class AnalysisRecord implements IARecord
     /**
      * Start recording
      *
+     * @param array $extras
      * @return IARecord
      */
-    public function start(): IARecord
+    public function start(array $extras = []): IARecord
     {
         if ($this->status === 1) return $this;
 
         // Set status
         $this->status = 1;
+        // Apply extras
+        $this->applyExtras("start", $extras);
         // Create start snapshot
         $this->startSnapshot = Analyzer::takeSnapshot(false);
 
@@ -111,9 +115,10 @@ class AnalysisRecord implements IARecord
     /**
      * Stop recording
      *
+     * @param array $extras
      * @return IARecord
      */
-    public function stop(): IARecord
+    public function stop(array $extras = []): IARecord
     {
         if ($this->status === 2) return $this;
 
@@ -126,6 +131,8 @@ class AnalysisRecord implements IARecord
         $this->status = 2;
         // Check relations
         $this->checkRelations();
+        // Apply extras
+        $this->applyExtras("stop", $extras);
         // Save stop timestamp
         $this->stopSnapshot = Analyzer::takeSnapshot(false);
 
@@ -422,30 +429,6 @@ class AnalysisRecord implements IARecord
         return $this;
     }
 
-    /**
-     * Set start snapshot
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setStartSnapshot(array $snapshot): IARecord
-    {
-        $this->startSnapshot = $snapshot;
-        return $this;
-    }
-
-    /**
-     * Set stop snapshot
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setStopSnapshot(array $snapshot): IARecord
-    {
-        $this->stopSnapshot = $snapshot;
-        return $this;
-    }
-
     // ***************************************
     // Private API
     // ***************************************
@@ -463,6 +446,49 @@ class AnalysisRecord implements IARecord
             if ($relation->getOwner()->uid === $this->uid && $relation->getTarget()->isStarted()) {
                 // Mark relation as intersect
                 $relation->intersect();
+            }
+        }
+    }
+
+    /**
+     * Get extra data
+     *
+     * @param string $key
+     * @param array $extras
+     * @return void
+     */
+    private function applyExtras(string $key, array $extras): void
+    {
+        // Iterate through each $extra
+        foreach ($extras as $extra => $provider) {
+            if ($provider[$key] ?? false) {
+                // Check if "handler" is a valid callable
+                if (is_callable($provider['handler'] ?? null)) {
+                    // Get data through $provider and save it
+                    $this->extras["$key $extra"] = call_user_func($provider['handler']);
+                }
+
+                // Check if method is called by $this->stop()
+                if ($key === 'stop') {
+                    // Check if "diff" is true and "start" is true
+                    if (($provider['diff'] ?? false) && ($provider['start'] ?? false)) {
+                        // Check if extra data is numeric (no need to check both)
+                        if (is_int($this->extras["stop $extra"]) || is_float($this->extras["stop $extra"])) {
+                            // Calculate diff
+                            $this->extras["diff $extra"] = $this->extras["stop $extra"] - $this->extras["start $extra"];
+                        }
+                    }
+                    // Check if extra have formatter
+                    if (is_callable($provider['formatter'] ?? null)) {
+                        foreach (['start', 'stop', 'diff'] as $k) {
+                            // Check if isset
+                            if (isset($this->extras["stop $extra"])) {
+                                // Apply formatter
+                                $this->extras["$k $extra"] = call_user_func($provider['formatter'], $this->extras["$k $extra"]);
+                            }
+                        }
+                    }
+                }
             }
         }
     }

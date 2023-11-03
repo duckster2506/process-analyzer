@@ -284,4 +284,14 @@ class AnalyzerTest extends TestCase
         // Profile "Profile" is not flushed
         $this->assertArrayHasKey("Profile", Analyzer::getProfiles());
     }
+
+    public function testCanGetLevelCallerOfCaller(): void
+    {
+        $uid1 = Analyzer::startProfile("Profile");
+        $uid2 = Analyzer::startProfile("Profile", "Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
+    }
 }

@@ -107,10 +107,11 @@ class AnalysisProfile implements IAProfile
      * Put and start a Record
      *
      * @param IARecord $record
-     * @param AnalysisProfile[]|null $activeProfiles
+     * @param IAProfile[]|null $activeProfiles
+     * @param array $extras
      * @return IARecord
      */
-    public function start(IARecord $record, ?array $activeProfiles = null): IARecord
+    public function start(IARecord $record, ?array $activeProfiles = null, array $extras = []): IARecord
     {
         // Put $record into the list
         $this->put($record);
@@ -119,16 +120,17 @@ class AnalysisProfile implements IAProfile
         // Add this Record to active list
         $this->activeIds[$record->getUID()] = true;
 
-        return $record->start();
+        return $record->start($extras);
     }
 
     /**
      * Stop and get record. Return null if stop failed
      *
      * @param string $uid
+     * @param array $extras
      * @return IARecord|null
      */
-    public function stop(string $uid): ?IARecord
+    public function stop(string $uid, array $extras = []): ?IARecord
     {
         // Get Record by UID
         $output = $this->records[$uid] ?? null;
@@ -138,7 +140,7 @@ class AnalysisProfile implements IAProfile
         $this->stopped[$uid] = true;
 
         // stop
-        return $output->stop();
+        return $output->stop($extras);
     }
 
     /**
@@ -179,7 +181,7 @@ class AnalysisProfile implements IAProfile
     /**
      * Get records
      *
-     * @return AnalysisRecord[]
+     * @return IARecord[]
      */
     public function getRecords(): array
     {

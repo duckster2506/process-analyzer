@@ -45,6 +45,43 @@ class AnalysisPrinterTest extends TestCase
         $this->assertInstanceOf(AnalysisPrinter::class, $printer);
     }
 
+    public function test_can_use_printProfile_default(): void
+    {
+        // Create Profile
+        $profile = $this->getProfile("Default");
+        // Create Printer
+        $printer = new AnalysisPrinter();
+        $printer->printProfile($profile);
+
+        // Expected
+        // Iterate through each profile to get data
+        $data = [];
+        foreach ($profile->getRecords() as $record) {
+            $data[] = $record->getUID();
+            $data[] = $record->getName();
+            $data[] = str_pad((new AnalyzerConfig())->timeFormatter($record->actualTime()), 8, " ", STR_PAD_LEFT);
+            $data[] = str_pad((new AnalyzerConfig())->memFormatter($record->actualMem()), 7, " ", STR_PAD_LEFT);
+            $data[] = str_pad($record->getExtras()['start peak'], 10, " ", STR_PAD_LEFT);
+            $data[] = str_pad($record->getExtras()['stop peak'], 9, " ", STR_PAD_LEFT);
+            $data[] = str_pad($record->getExtras()['diff peak'], 9, " ", STR_PAD_LEFT);
+        }
+        $expected = sprintf("" .
+            "Default --------------------" . PHP_EOL .
+            "╭───────────────┬──────────┬──────────┬─────────┬────────────┬───────────┬───────────╮" . PHP_EOL .
+            "│ Uid           │ Name     │ Time     │ Memory  │ Start peak │ Stop peak │ Diff peak │" . PHP_EOL .
+            "├───────────────┼──────────┼──────────┼─────────┼────────────┼───────────┼───────────┤" . PHP_EOL .
+            "│ %s │ %s │ %s │ %s │ %s │ %s │ %s │" . PHP_EOL .
+            "│ %s │ %s │ %s │ %s │ %s │ %s │ %s │" . PHP_EOL .
+            "│ %s │ %s │ %s │ %s │ %s │ %s │ %s │" . PHP_EOL .
+            "╰───────────────┴──────────┴──────────┴─────────┴────────────┴───────────┴───────────╯" . PHP_EOL .
+            "----------------------------" . PHP_EOL,
+            ...$data
+        );
+
+        // Check result
+        $this->assertEquals($expected, $this->getFileContent());
+    }
+
     public function test_can_use_printProfile_useFileFalse(): void
     {
         // Config
@@ -345,19 +382,19 @@ class AnalysisPrinterTest extends TestCase
         $this->assertIsString(self::$onPrintProfileString);
     }
 
-    public function getProfile(): AnalysisProfile
+    public function getProfile($name = "Profile"): AnalysisProfile
     {
-        $uid1 = Analyzer::profile("Profile")->start("Record 1");
+        $uid1 = Analyzer::profile($name)->start("Record 1");
         $str1 = str_repeat(" ", 1024);
-        $uid2 = Analyzer::profile("Profile")->start("Record 2");
+        $uid2 = Analyzer::profile($name)->start("Record 2");
         $str2 = str_repeat(" ", 1024);
-        Analyzer::profile("Profile")->stop();
-        $uid3 = Analyzer::profile("Profile")->start("Record 3");
-        Analyzer::profile("Profile")->stop($uid1);
+        Analyzer::profile($name)->stop();
+        $uid3 = Analyzer::profile($name)->start("Record 3");
+        Analyzer::profile($name)->stop($uid1);
         $str3 = str_repeat(" ", 1024);
-        Analyzer::profile("Profile")->stop($uid3);
+        Analyzer::profile($name)->stop($uid3);
 
-        return Analyzer::getProfiles()["Profile"];
+        return Analyzer::getProfiles()[$name];
     }
 
     public function getFileContent(): string

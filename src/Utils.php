@@ -18,4 +18,15 @@ class Utils
             call_user_func([$obj, $hookName], ...$args);
         }
     }
+
+    /**
+     * Append B character
+     *
+     * @param mixed $value
+     * @return string
+     */
+    public static function appendB(mixed $value): string
+    {
+        return $value . " B";
+    }
 }

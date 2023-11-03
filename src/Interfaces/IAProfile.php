@@ -34,18 +34,20 @@ interface IAProfile
      * Start and get Record. Return null if start failed
      *
      * @param IARecord $record
-     * @param IAProfile[] $activeProfiles
+     * @param IAProfile[]|null $activeProfiles
+     * @param array $extras
      * @return IARecord
      */
-    public function start(IARecord $record, array $activeProfiles): IARecord;
+    public function start(IARecord $record, array $activeProfiles = null, array $extras = []): IARecord;
 
     /**
      * Stop and get Record. Return null if stop failed
      *
      * @param string $uid
+     * @param array $extras
      * @return IARecord|null
      */
-    public function stop(string $uid): ?IARecord;
+    public function stop(string $uid, array $extras = []): ?IARecord;
 
     /**
      * Get the latest active Record

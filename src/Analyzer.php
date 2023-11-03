@@ -191,7 +191,7 @@ class Analyzer
     public static function startProfile(string $profileName, ?string $title = null): ?string
     {
         // Start recording
-        return self::profile($profileName)?->start($title);
+        return self::profile($profileName)?->start(self::getCallerAsDefault($title));
     }
 
     /**
@@ -254,12 +254,23 @@ class Analyzer
     }
 
     /**
+     * Get Profile's extras
+     *
+     * @param IAProfile $profile
+     * @return array
+     */
+    public static function getExtras(IAProfile $profile): array
+    {
+        return self::$config->profileExtras()[$profile->getName()] ?? [];
+    }
+
+    /**
      * Get title (or name) for Record
      *
      * @param string|null $title
      * @return string
      */
-    public static function getTitle(?string $title): string
+    public static function getCallerAsDefault(?string $title): string
     {
         // Indicate if $title is null
         if (is_null($title)) {
@@ -268,11 +279,11 @@ class Analyzer
             // Indicate if
             if (is_null($default)) {
                 // Get the backtrace
-                $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+                $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3);
 
-                return count($backtrace) === 2
-                    ? "Function: " . $backtrace[1]['function']
-                    : $backtrace[0]['file'] . ":" . ($backtrace[0]['line'] ?? 0);
+                return count($backtrace) === 3
+                    ? "Function: " . $backtrace[2]['function']
+                    : $backtrace[1]['file'] . ":" . ($backtrace[1]['line'] ?? 0);
             } else {
                 return $default;
             }

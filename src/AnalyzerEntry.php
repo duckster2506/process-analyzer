@@ -58,10 +58,10 @@ class AnalyzerEntry
     public function start(?string $title = null): string
     {
         // Create a Record and set pre snapshot
-        $record = AnalysisRecord::open(Analyzer::getTitle($title))->setPreStartSnapshot($this->snapshot);
+        $record = AnalysisRecord::open(Analyzer::getCallerAsDefault($title))->setPreStartSnapshot($this->snapshot);
 
         // Add Record to Profile and start recording
-        return $this->profile->start($record, Analyzer::getProfiles())->getUID();
+        return $this->profile->start($record, Analyzer::getProfiles(), Analyzer::getExtras($this->profile))->getUID();
     }
 
     /**
@@ -80,7 +80,7 @@ class AnalyzerEntry
         $record->setPreStopSnapshot($this->snapshot);
 
         // Stop
-        $this->profile->stop($record->getUID());
+        $this->profile->stop($record->getUID(), Analyzer::getExtras($this->profile));
     }
 
     /**

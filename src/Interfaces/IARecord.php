@@ -2,8 +2,6 @@
 
 namespace Duckster\Analyzer\Interfaces;
 
-use Duckster\Analyzer\Structures\RecordRelation;
-
 interface IARecord
 {
     /**
@@ -17,44 +15,18 @@ interface IARecord
     /**
      * Start recording
      *
+     * @param array $extras
      * @return IARecord
      */
-    public function start(): IARecord;
+    public function start(array $extras = []): IARecord;
 
     /**
      * Stop recording.
      *
+     * @param array $extras
      * @return IARecord
      */
-    public function stop(): IARecord;
-
-    /**
-     * Get the preparation time to start this Record
-     *
-     * @return float
-     */
-    public function preStartPrepTime(): float;
-
-    /**
-     * Get the preparation time to start and stop this Record
-     *
-     * @return float
-     */
-    public function prepTime(): float;
-
-    /**
-     * Get the preparation time to stop this Record
-     *
-     * @return float
-     */
-    public function preStopPrepTime(): float;
-
-    /**
-     * Get the diff between startTime and stopTime
-     *
-     * @return float
-     */
-    public function diffTime(): float;
+    public function stop(array $extras = []): IARecord;
 
     /**
      * Get the actual diff time (exclude relation)
@@ -62,34 +34,6 @@ interface IARecord
      * @return float
      */
     public function actualTime(): float;
-
-    /**
-     * Get the preparation mem to start this Record
-     *
-     * @return int
-     */
-    public function preStartPrepMem(): int;
-
-    /**
-     * Get the preparation memory to start and stop this Record
-     *
-     * @return int
-     */
-    public function prepMem(): int;
-
-    /**
-     * Get the preparation mem to stop this Record
-     *
-     * @return int
-     */
-    public function preStopPrepMem(): int;
-
-    /**
-     * Get the diff between startEmMem and stopEmMem
-     *
-     * @return int
-     */
-    public function diffMem(): int;
 
     /**
      * Get the actual diff mem (exclude relation)
@@ -111,44 +55,6 @@ interface IARecord
      * @return string
      */
     public function getName(): string;
-
-
-    /**
-     * Get startTime timestamp
-     *
-     * @return float
-     */
-    public function getStartTime(): float;
-
-
-    /**
-     * Get stopTime timestamp
-     *
-     * @return float
-     */
-    public function getStopTime(): float;
-
-    /**
-     * Get start emalloc() memory usage
-     *
-     * @return int
-     */
-    public function getStartMem(): int;
-
-
-    /**
-     * Get stop emalloc() memory usage
-     *
-     * @return int
-     */
-    public function getStopMem(): int;
-
-    /**
-     * Get relations
-     *
-     * @return RecordRelation[]
-     */
-    public function getRelations(): array;
 
     /**
      * Get extra information
@@ -189,26 +95,10 @@ interface IARecord
     public function setPreStartSnapshot(array $snapshot): IARecord;
 
     /**
-     * Set start snapshot and return
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setStartSnapshot(array $snapshot): IARecord;
-
-    /**
      * Set post snapshot and return
      *
      * @param array $snapshot
      * @return IARecord
      */
     public function setPreStopSnapshot(array $snapshot): IARecord;
-
-    /**
-     * Set stop snapshot and return
-     *
-     * @param array $snapshot
-     * @return IARecord
-     */
-    public function setStopSnapshot(array $snapshot): IARecord;
 }
