@@ -5,6 +5,7 @@ namespace Duckster\Analyzer\Tests;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerConfig;
 use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckster\Analyzer\Tests\Config\DefaultRecordGetterConfig;
 use Duckster\Analyzer\Tests\Config\DisableConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -122,6 +123,8 @@ class AnalyzerTest extends TestCase
         $this->assertCount(1, Analyzer::getProfiles());
         // Check Analyzer's Profiles name
         $this->assertSame($name, Analyzer::getProfiles()[$name]->getName());
+        // Return false if try to add same Profile
+        $this->assertFalse(Analyzer::addProfile($profile));
     }
 
     public function testCanPopProfile(): void
@@ -185,6 +188,13 @@ class AnalyzerTest extends TestCase
         Analyzer::stopProfile("Test stop", $uid);
         // Check if "Test stop" Profile's record is stopped
         $this->assertTrue(Analyzer::getProfiles()["Test stop"]->get($uid)->isStopped());
+
+        // Start recording
+        $uid = Analyzer::start("Record that will be stopped");
+        // Stop
+        Analyzer::stop($uid);
+        // Check if "Test stop" Profile's record is stopped
+        $this->assertTrue(Analyzer::getProfiles()["Default"]->get($uid)->isStopped());
     }
 
     /**
@@ -293,5 +303,21 @@ class AnalyzerTest extends TestCase
         // Check Record's name
         $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
         $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
+    }
+
+    public function testCanGetCallerWithConfig(): void
+    {
+        Analyzer::tryToInit(new DefaultRecordGetterConfig());
+        $uid1 = Analyzer::start();
+        $uid2 = Analyzer::start("Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Hello world!", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
+    }
+
+    public static function printHelloWorld(): string
+    {
+        return "Hello world!";
     }
 }

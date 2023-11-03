@@ -188,13 +188,13 @@ class AnalysisPrinterTest extends TestCase
             "Profile --------------------" . PHP_EOL .
             "[%s] %s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "[%s] %s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "[%s] %s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "----------------------------" . PHP_EOL,
             ...$data
         );
@@ -225,13 +225,13 @@ class AnalysisPrinterTest extends TestCase
             "Profile --------------------" . PHP_EOL .
             "%s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "%s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "%s:" . PHP_EOL .
             "	Time ⇒ [%s];" . PHP_EOL .
-            "	Memory ⇒ [%s]" . PHP_EOL .
+            "	Memory ⇒ [%s];" . PHP_EOL .
             "----------------------------" . PHP_EOL,
             ...$data
         );
@@ -261,9 +261,9 @@ class AnalysisPrinterTest extends TestCase
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
-            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
+            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
+            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
+            "[%s] %s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
             "----------------------------" . PHP_EOL,
             ...$data
         );
@@ -292,9 +292,9 @@ class AnalysisPrinterTest extends TestCase
         }
         $expected = sprintf("" .
             "Profile --------------------" . PHP_EOL .
-            "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
-            "%s: Time ⇒ [%s]; Memory ⇒ [%s]" . PHP_EOL .
+            "%s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
+            "%s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
+            "%s: Time ⇒ [%s]; Memory ⇒ [%s];" . PHP_EOL .
             "----------------------------" . PHP_EOL,
             ...$data
         );

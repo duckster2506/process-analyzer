@@ -22,10 +22,10 @@ class Utils
     /**
      * Append B character
      *
-     * @param mixed $value
+     * @param int|float|string $value
      * @return string
      */
-    public static function appendB(mixed $value): string
+    public static function appendB(int|float|string $value): string
     {
         return $value . " B";
     }

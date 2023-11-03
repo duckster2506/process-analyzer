@@ -163,6 +163,8 @@ class AnalysisPrinter implements IAPrinter
         $line[0] .= sprintf("%s:", $data['name']);
         // Iterate through each field in $data
         foreach ($data as $field => $value) {
+            // Skip 'uid' and 'name'
+            if ($field === 'uid' || $field === 'name') continue;
             // Data as string
             $line[] = sprintf("%s ⇒ [%s];", ucfirst($field), $data[$field] ?? "");
         }

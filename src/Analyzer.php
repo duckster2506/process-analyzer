@@ -38,7 +38,7 @@ class Analyzer
      */
     public static function tryToInit(AnalyzerConfig $config = null): void
     {
-        if (isset($config)) {
+        if (!is_null($config)) {
             self::$config = $config;
         } else if (is_null(self::$config)) {
             self::$config = new AnalyzerConfig();
@@ -52,6 +52,7 @@ class Analyzer
      */
     public static function config(): AnalyzerConfig
     {
+        if (is_null(self::$config)) self::tryToInit();
         return self::$config;
     }
 

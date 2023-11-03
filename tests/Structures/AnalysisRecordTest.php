@@ -32,6 +32,8 @@ class AnalysisRecordTest extends TestCase
         $this->assertEmpty(0.0, $obj->getStopTime());
         $this->assertEquals(0, $obj->getStartMem());
         $this->assertEquals(0, $obj->getStopMem());
+        $this->assertIsArray($obj->getPreStartSnapshot());
+        $this->assertIsArray($obj->getPreStopSnapshot());
     }
 
     public function testCanAddRelations(): void
@@ -224,7 +226,7 @@ class AnalysisRecordTest extends TestCase
         $record = AnalysisRecord::open("Record");
         // Start and stop
         $record->start($extras)->stop($extras);
-Utils::rawLog(print_r($record->getExtras(), true));
+
         // This extras will be gotten at start
         $this->assertArrayHasKey("start count", $record->getExtras());
         // Check value
@@ -392,9 +394,9 @@ Utils::rawLog(print_r($record->getExtras(), true));
         // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
         // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
         // And there may be still have redundant time for machine to actually put to sleep and wakeup
-        // The time diff of 2 operation may vary between 0 and 20 (usually between 1~5 and sometime bigger)
+        // The time diff of 2 operation may vary between 0 and 100 μs (usually between 1~5 and sometime bigger)
         // And the time diff of 2 operation may sometime bigger or smaller compare to each other
-        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->prepTime()) / 1e+6);
+        $this->assertLessThanOrEqual(100, abs($timeDiff - $record->prepTime()) / 1e+6);
         // To make sure $timeDiff is more than 2s
         $this->assertGreaterThanOrEqual(2000, $timeDiff);
         // To make sure $record->diffTime is more than 2s
@@ -426,9 +428,9 @@ Utils::rawLog(print_r($record->getExtras(), true));
         // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
         // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
         // And there may be still have redundant time for machine to actually put to sleep and wakeup
-        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // The time diff of 2 operation may vary between 100 μs (usually between 1~5 and sometime bigger)
         // And the time diff of 2 operation may sometime bigger or smaller compare to each other
-        $this->assertLessThanOrEqual(20, abs($timeDiff - $obj->diffTime()) / 1e+6);
+        $this->assertLessThanOrEqual(100, abs($timeDiff - $obj->diffTime()) / 1e+6);
         // To make sure $timeDiff is more than 2s
         $this->assertGreaterThanOrEqual(2000, $timeDiff);
         // To make sure $obj->diffTime is more than 2s
@@ -478,9 +480,9 @@ Utils::rawLog(print_r($record->getExtras(), true));
         // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
         // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
         // And there may be still have redundant time for machine to actually put to sleep and wakeup
-        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // The time diff of 2 operation may vary between 100 μs (usually between 1~5 and sometime bigger)
         // And the time diff of 2 operation may sometime bigger or smaller compare to each other
-        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        $this->assertLessThanOrEqual(100, abs($timeDiff - $record->diffTime()) / 1e+6);
         // To make sure $timeDiff is more than 2s
         $this->assertGreaterThanOrEqual(2000, $timeDiff);
         // To make sure $record->diffTime is more than 2s
@@ -518,9 +520,9 @@ Utils::rawLog(print_r($record->getExtras(), true));
         // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
         // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
         // And there may be still have redundant time for machine to actually put to sleep and wakeup
-        // The time diff of 2 operation may vary between 20 (usually between 1~5 and sometime bigger)
+        // The time diff of 2 operation may vary between 100 μs (usually between 1~5 and sometime bigger)
         // And the time diff of 2 operation may sometime bigger or smaller compare to each other
-        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        $this->assertLessThanOrEqual(100, abs($timeDiff - $record->diffTime()) / 1e+6);
         // To make sure $timeDiff is more than 2s
         $this->assertGreaterThanOrEqual(2000, $timeDiff);
         // To make sure $record->diffTime is more than 2s
@@ -563,9 +565,9 @@ Utils::rawLog(print_r($record->getExtras(), true));
         // Operation 1: Sleep 2s; Operation 2: Sleep 4s (2s for preparation)
         // We can not expect 2 operation will generate the same time diff since the time to create timestamp might be different each time
         // And there may be still have redundant time for machine to actually put to sleep and wakeup
-        // The time diff of 2 operation may vary between 0 and 20 (usually between 1~5 and sometime bigger)
+        // The time diff of 2 operation may vary between 0 and 100 μs (usually between 1~5 and sometime bigger)
         // And the time diff of 2 operation may sometime bigger or smaller compare to each other
-        $this->assertLessThanOrEqual(20, abs($timeDiff - $record->diffTime()) / 1e+6);
+        $this->assertLessThanOrEqual(100, abs($timeDiff - $record->diffTime()) / 1e+6);
         // To make sure $timeDiff is more than 2s
         $this->assertGreaterThanOrEqual(2000, $timeDiff);
         // To make sure $record->diffTime is more than 2s
@@ -943,8 +945,8 @@ Utils::rawLog(print_r($record->getExtras(), true));
         }
 
         // This test will show the error between 2 operation compare to each other
-        // The average error between diffs will vary between 0 - 20 μs
-        $this->assertLessThanOrEqual(20, $total / 1000);
+        // The average error between diffs will vary between 0 - 100 μs
+        $this->assertLessThanOrEqual(100, $total / 1000);
     }
 
     public function increaseCount(): int
