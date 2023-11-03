@@ -3,7 +3,7 @@
 namespace Duckster\Analyzer\Tests;
 
 use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Utils;
+use Duckster\Analyzer\Tests\Config\InvalidRecordInstanceConfig;
 use Duckster\Analyzer\Analyzer;
 use Duckster\Analyzer\AnalyzerEntry;
 use Duckster\Analyzer\Structures\AnalysisProfile;
@@ -50,6 +50,14 @@ class AnalyzerEntryTest extends TestCase
         $this->assertSame("Record 1", $entry->getProfile()->get($uid)->getName());
         $this->assertTrue($entry->getProfile()->get($uid)->isStarted());
         $this->assertFalse($entry->getProfile()->get($uid)->isStopped());
+    }
+
+    public function testCanReturnEmptyStringIfStartWithInvalidRecordInstance(): void
+    {
+        Analyzer::tryToInit(new InvalidRecordInstanceConfig());
+
+        // Return empty string
+        $this->assertEmpty(Analyzer::profile("Profile")->start());
     }
 
     public function testCanStop(): void

@@ -4,6 +4,9 @@ namespace Duckster\Analyzer\Tests;
 
 use Duckster\Analyzer\AnalysisPrinter;
 use Duckster\Analyzer\AnalyzerConfig;
+use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckster\Analyzer\Structures\AnalysisRecord;
+use Duckster\Analyzer\Tests\Config\FormatterConfig;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerConfigTest extends TestCase
@@ -31,6 +34,16 @@ class AnalyzerConfigTest extends TestCase
     public function test_default_defaultRecordGetter(): void
     {
         $this->assertNull($this->config->defaultRecordGetter());
+    }
+
+    public function test_default_profile(): void
+    {
+        $this->assertEquals(AnalysisProfile::class, $this->config->profile());
+    }
+
+    public function test_default_record(): void
+    {
+        $this->assertEquals(AnalysisRecord::class, $this->config->record());
     }
 
     public function test_default_printer(): void
@@ -94,6 +107,14 @@ class AnalyzerConfigTest extends TestCase
         $this->assertEquals("5 ms", $this->config->timeFormatter((5 * 1e+6)));
     }
 
+    public function test_default_timeFormatter_setup(): void
+    {
+        // Create config
+        $config = new FormatterConfig();
+        // Check value
+        $this->assertEquals("Number: 5000", $config->timeFormatter(5000));
+    }
+
     public function test_default_memUnit(): void
     {
         $this->assertEquals("KB", $this->config->memUnit());
@@ -103,6 +124,14 @@ class AnalyzerConfigTest extends TestCase
     {
         // Try to convert byte to kb. Expect 5 kb
         $this->assertEquals("5 KB", $this->config->memFormatter(5 * 1024));
+    }
+
+    public function test_default_memFormatter_setup(): void
+    {
+        // Create config
+        $config = new FormatterConfig();
+        // Check value
+        $this->assertEquals("Number: 5000", $config->memFormatter(5000));
     }
 
     public function test_default_topLeftChar(): void
@@ -158,5 +187,10 @@ class AnalyzerConfigTest extends TestCase
     public function test_default_verticalLineChar(): void
     {
         $this->assertEquals("│", $this->config->verticalLineChar());
+    }
+
+    public static function addPrefix(int|float $value): string
+    {
+        return "Number: $value";
     }
 }

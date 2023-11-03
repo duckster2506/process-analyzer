@@ -106,10 +106,15 @@ class Analyzer
         // Check if disabled
         if (!self::$config->enable()) return null;
 
+        // Get Profile class
+        $profileClass = self::config()->profile();
+        // Check if Profile class has "create" method
+        if (!method_exists($profileClass, "create")) return null;
+
         // Check if Profile is existing
         if (!self::hasProfile($name)) {
             // Create new Profile
-            self::$profiles[$name] = AnalysisProfile::create($name);
+            self::$profiles[$name] = $profileClass::create($name);
             // Create new AnalysisEntry
             self::$entries[$name] = new AnalyzerEntry(self::$profiles[$name]);
         }

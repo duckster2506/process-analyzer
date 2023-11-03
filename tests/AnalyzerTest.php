@@ -7,6 +7,7 @@ use Duckster\Analyzer\AnalyzerConfig;
 use Duckster\Analyzer\Structures\AnalysisProfile;
 use Duckster\Analyzer\Tests\Config\DefaultRecordGetterConfig;
 use Duckster\Analyzer\Tests\Config\DisableConfig;
+use Duckster\Analyzer\Tests\Config\InvalidProfileInstanceConfig;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerTest extends TestCase
@@ -106,6 +107,14 @@ class AnalyzerTest extends TestCase
         $this->assertInstanceOf(AnalysisProfile::class, $profile);
         // Check $profile name
         $this->assertSame($name, $profile->getName());
+    }
+
+    public function testCanReturnNullIfConfigWithInvalidProfileInstance(): void
+    {
+        Analyzer::tryToInit(new InvalidProfileInstanceConfig());
+
+        // Return null
+        $this->assertNull(Analyzer::profile("Some profile"));
     }
 
     public function testCanAddProfile(): void

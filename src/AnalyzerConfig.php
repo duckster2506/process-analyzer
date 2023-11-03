@@ -4,6 +4,8 @@ namespace Duckster\Analyzer;
 
 use Duckster\Analyzer\Interfaces\IAProfile;
 use Duckster\Analyzer\Interfaces\IARecord;
+use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckster\Analyzer\Structures\AnalysisRecord;
 
 class AnalyzerConfig
 {
@@ -42,6 +44,16 @@ class AnalyzerConfig
             ]
         ]
     ];
+
+    /**
+     * @var string Profile class
+     */
+    protected string $profile = AnalysisProfile::class;
+
+    /**
+     * @var string Record class
+     */
+    protected string $record = AnalysisRecord::class;
 
     // ***************************************
     // Printer
@@ -195,7 +207,27 @@ class AnalyzerConfig
     }
 
     /**
-     * Get printer
+     * Get profile instance
+     *
+     * @return string
+     */
+    public function profile(): string
+    {
+        return $this->profile;
+    }
+
+    /**
+     * Get record instance
+     *
+     * @return string
+     */
+    public function record(): string
+    {
+        return $this->record;
+    }
+
+    /**
+     * Get printer instance
      *
      * @return string
      */
@@ -312,7 +344,7 @@ class AnalyzerConfig
      */
     public function timeFormatter(float $value): string
     {
-        if (is_callable($this->timeFormatter) || is_array($this->timeFormatter))
+        if (is_callable($this->timeFormatter))
             return call_user_func($this->timeFormatter, $value);
 
         $offset = match (strtolower($this->timeUnit)) {
@@ -349,7 +381,7 @@ class AnalyzerConfig
      */
     public function memFormatter(int $value): string
     {
-        if (is_callable($this->memFormatter) || is_array($this->memFormatter))
+        if (is_callable($this->memFormatter))
             return call_user_func($this->memFormatter, $value);
 
         $offset = match (strtolower($this->memUnit)) {

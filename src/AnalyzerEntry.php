@@ -57,8 +57,13 @@ class AnalyzerEntry
      */
     public function start(?string $title = null): string
     {
+        // Get Record class
+        $recordClass = Analyzer::config()->record();
+        // Check if Record class has "open" method
+        if (!method_exists($recordClass, "open")) return "";
+
         // Create a Record and set pre snapshot
-        $record = AnalysisRecord::open(Analyzer::getCallerAsDefault($title))->setPreStartSnapshot($this->snapshot);
+        $record = $recordClass::open(Analyzer::getCallerAsDefault($title))->setPreStartSnapshot($this->snapshot);
 
         // Add Record to Profile and start recording
         return $this->profile->start($record, Analyzer::getProfiles(), Analyzer::getExtras($this->profile))->getUID();
