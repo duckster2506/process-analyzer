@@ -31,6 +31,16 @@ abstract class IAPrinter
     }
 
     /**
+     * After preprocess Record
+     *
+     * @param array $data
+     * @return void
+     */
+    public function onEachPreprocessedRecord(array $data): void
+    {
+    }
+
+    /**
      * After converting Record to String
      * @param string $content
      * @return void

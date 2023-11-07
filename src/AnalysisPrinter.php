@@ -129,6 +129,9 @@ class AnalysisPrinter extends IAPrinter
         // Skip UID column
         if (!Analyzer::config()->showUID()) unset($output['uid']);
 
+        // Hook: onEachRecordString
+        Utils::callHook($this, "onEachRecordString", $output);
+
         return $output;
     }
 
