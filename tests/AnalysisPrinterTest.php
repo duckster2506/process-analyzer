@@ -24,6 +24,7 @@ class AnalysisPrinterTest extends TestCase
 {
     public static $onPreprocessProfile = null;
     public static $onPreprocessRecord = null;
+    public static $onEachPreprocessedRecord = null;
     public static $onEachRecordString = null;
     public static $onPrintProfileString = null;
 
@@ -355,6 +356,8 @@ class AnalysisPrinterTest extends TestCase
         $this->assertInstanceOf(IAProfile::class, self::$onPreprocessProfile);
         // Check if hook onPreprocessRecord is called
         $this->assertInstanceOf(IARecord::class, self::$onPreprocessRecord);
+        // Check if hook onEachPreprocessedRecord is called
+        $this->assertIsArray(self::$onEachPreprocessedRecord);
         // Check if hook onEachRecordString is not called since prettyPrint is enabled
         $this->assertNull(self::$onEachRecordString);
         // Check if hook onPrintProfileString is called
@@ -375,6 +378,8 @@ class AnalysisPrinterTest extends TestCase
         $this->assertInstanceOf(IAProfile::class, self::$onPreprocessProfile);
         // Check if hook onPreprocessRecord is called
         $this->assertInstanceOf(IARecord::class, self::$onPreprocessRecord);
+        // Check if hook onEachPreprocessedRecord is called
+        $this->assertIsArray(self::$onEachPreprocessedRecord);
         // Check if hook onEachRecordString is not called since prettyPrint is disabled
         $this->assertIsString(self::$onEachRecordString);
         // Check if hook onPrintProfileString is called

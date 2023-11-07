@@ -32,6 +32,17 @@ class HookPrinter extends AnalysisPrinter
     }
 
     /**
+     * After preprocess Record
+     *
+     * @param array $data
+     * @return void
+     */
+    public function onEachPreprocessedRecord(array $data): void
+    {
+        AnalysisPrinterTest::$onEachPreprocessedRecord = $data;
+    }
+
+    /**
      * After converting Record to String
      * @param string $content
      * @return void
