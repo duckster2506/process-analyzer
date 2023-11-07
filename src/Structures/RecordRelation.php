@@ -1,6 +1,6 @@
 <?php
 
-namespace Duckster\Analyzer\Structures;
+namespace Duckstery\Analyzer\Structures;
 
 class RecordRelation
 {

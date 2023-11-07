@@ -1,22 +1,23 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\AnalysisPrinter;
-use Duckster\Analyzer\Analyzer;
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Interfaces\IARecord;
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Tests\Config\HideUIDConfig;
-use Duckster\Analyzer\Tests\Config\Hook1Config;
-use Duckster\Analyzer\Tests\Config\Hook2Config;
-use Duckster\Analyzer\Tests\Config\OneLineConfig;
-use Duckster\Analyzer\Tests\Config\OneLineHideUIDConfig;
-use Duckster\Analyzer\Tests\Config\PrefixSuffixConfig;
-use Duckster\Analyzer\Tests\Config\RawPrintConfig;
-use Duckster\Analyzer\Tests\Config\RawPrintHideUIDConfig;
-use Duckster\Analyzer\Tests\Config\UseFileFalseConfig;
+use Duckstery\Analyzer\AnalysisPrinter;
+use Duckstery\Analyzer\Analyzer;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Interfaces\IAProfile;
+use Duckstery\Analyzer\Interfaces\IARecord;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Tests\Config\HideUIDConfig;
+use Duckstery\Analyzer\Tests\Config\Hook1Config;
+use Duckstery\Analyzer\Tests\Config\Hook2Config;
+use Duckstery\Analyzer\Tests\Config\OneLineConfig;
+use Duckstery\Analyzer\Tests\Config\OneLineHideUIDConfig;
+use Duckstery\Analyzer\Tests\Config\PrefixSuffixConfig;
+use Duckstery\Analyzer\Tests\Config\RawPrintConfig;
+use Duckstery\Analyzer\Tests\Config\RawPrintHideUIDConfig;
+use Duckstery\Analyzer\Tests\Config\UseFileFalseConfig;
+use Duckstery\Analyzer\Tests\Printers\HookPrinter;
 use PHPUnit\Framework\TestCase;
 
 class AnalysisPrinterTest extends TestCase
@@ -34,7 +35,7 @@ class AnalysisPrinterTest extends TestCase
         // Clear Profiles
         Analyzer::clear();
         // Clear file
-        file_put_contents("logs/log.txt", "");
+        file_put_contents("logs" . DIRECTORY_SEPARATOR . date('Y-m-d') . ".log", "");
     }
 
     public function test_can_use_constructor(): void
@@ -343,12 +344,11 @@ class AnalysisPrinterTest extends TestCase
     public function test_can_use_hook_for_prettyPrint(): void
     {
         // Config
-        $config = new Hook1Config();
-        Analyzer::tryToInit($config);
+        Analyzer::tryToInit(new AnalyzerConfig());
         // Create Profile
         $profile = $this->getProfile();
         // Create Printer
-        $printer = new AnalysisPrinter();
+        $printer = new HookPrinter();
         $printer->printProfile($profile);
 
         // Check if hook onPreprocessProfile is called
@@ -364,12 +364,11 @@ class AnalysisPrinterTest extends TestCase
     public function test_can_use_hook_for_non_prettyPrint(): void
     {
         // Config
-        $config = new Hook2Config();
-        Analyzer::tryToInit($config);
+        Analyzer::tryToInit(new OneLineConfig());
         // Create Profile
         $profile = $this->getProfile();
         // Create Printer
-        $printer = new AnalysisPrinter();
+        $printer = new HookPrinter();
         $printer->printProfile($profile);
 
         // Check if hook onPreprocessProfile is called
@@ -399,6 +398,6 @@ class AnalysisPrinterTest extends TestCase
 
     public function getFileContent(): string
     {
-        return file_get_contents("logs/log.txt");
+        return file_get_contents("logs" . DIRECTORY_SEPARATOR . date('Y-m-d') . ".log");
     }
 }

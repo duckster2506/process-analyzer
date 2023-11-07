@@ -1,11 +1,11 @@
 <?php
 
-namespace Duckster\Analyzer;
+namespace Duckstery\Analyzer;
 
-use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Interfaces\IARecord;
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
+use Duckstery\Analyzer\Interfaces\IAProfile;
+use Duckstery\Analyzer\Interfaces\IARecord;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
 
 class AnalyzerConfig
 {
@@ -82,7 +82,7 @@ class AnalyzerConfig
     /**
      * @var string|false Print to file
      */
-    protected string|false $useFile = "logs/log.txt";
+    protected string|false $useFile = "logs";
 
     /**
      * @var bool Print to console
@@ -509,48 +509,5 @@ class AnalyzerConfig
     public function verticalLineChar(): string
     {
         return $this->verticalLineChar;
-    }
-
-    // ***************************************
-    // Printer's hooks
-    // ***************************************
-
-    /**
-     * Before modifying Profile
-     *
-     * @param IAProfile $profile
-     * @return void
-     */
-    public function onPreprocessProfile(IAProfile $profile): void
-    {
-    }
-
-    /**
-     * Before modifying Record
-     *
-     * @param IARecord $record
-     * @return void
-     */
-    public function onPreprocessRecord(IARecord $record): void
-    {
-    }
-
-    /**
-     * After converting Record to String
-     * @param string $content
-     * @return void
-     */
-    public function onEachRecordString(string $content): void
-    {
-    }
-
-    /**
-     * Before print Profile's statistic report
-     *
-     * @param string $content
-     * @return void
-     */
-    public function onPrintProfileString(string $content): void
-    {
     }
 }

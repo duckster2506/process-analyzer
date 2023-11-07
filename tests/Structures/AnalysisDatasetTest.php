@@ -1,8 +1,8 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Structures;
+namespace Duckstery\Analyzer\Tests\Structures;
 
-use Duckster\Analyzer\Structures\AnalysisDataset;
+use Duckstery\Analyzer\Structures\AnalysisDataset;
 use PHPUnit\Framework\TestCase;
 
 class AnalysisDatasetTest extends TestCase

@@ -1,14 +1,14 @@
 <?php
 
-namespace Duckster\Analyzer;
+namespace Duckstery\Analyzer;
 
-use Duckster\Analyzer\Interfaces\IAPrinter;
-use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Interfaces\IARecord;
-use Duckster\Analyzer\Structures\AnalysisDataset;
-use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Interfaces\IAPrinter;
+use Duckstery\Analyzer\Interfaces\IAProfile;
+use Duckstery\Analyzer\Interfaces\IARecord;
+use Duckstery\Analyzer\Structures\AnalysisDataset;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
 
-class AnalysisPrinter implements IAPrinter
+class AnalysisPrinter extends IAPrinter
 {
     // ***************************************
     // Properties
@@ -94,7 +94,7 @@ class AnalysisPrinter implements IAPrinter
     private function preprocessProfile(IAProfile $profile): void
     {
         // Call hook
-        Utils::callHook(Analyzer::config(), "onPreprocessProfile", $profile);
+        Utils::callHook($this, "onPreprocessProfile", $profile);
         // Apply prefix and suffix for Profile's name
         $profile->setName(
             Analyzer::config()->profilePrefix() . $profile->getName() . Analyzer::config()->profileSuffix()
@@ -110,7 +110,7 @@ class AnalysisPrinter implements IAPrinter
     private function preprocessRecord(IARecord $record): array
     {
         // Hook: beforePrint for AnalysisProfile
-        Utils::callHook(Analyzer::config(), "onPreprocessRecord", $record);
+        Utils::callHook($this, "onPreprocessRecord", $record);
 
         // $record new Name
         $name = Analyzer::config()->recordPrefix() . $record->getName() . Analyzer::config()->recordSuffix();
@@ -172,7 +172,7 @@ class AnalysisPrinter implements IAPrinter
         // Create content
         $content = implode(Analyzer::config()->oneLine() ? " " : (PHP_EOL . "\t"), $line);
         // Call hook
-        Utils::callHook(Analyzer::config(), "onEachRecordString", $content);
+        Utils::callHook($this, "onEachRecordString", $content);
 
         // Add to content
         $this->content .= $content . PHP_EOL;
@@ -234,13 +234,15 @@ class AnalysisPrinter implements IAPrinter
     private function printContent(string $content)
     {
         // Hook: printRecord
-        Utils::callHook(Analyzer::config(), "onPrintProfileString", $this->content);
+        Utils::callHook($this, "onPrintProfileString", $this->content);
 
         // Check if Printer should print to file
         $useFile = Analyzer::config()->useFile();
         if ($useFile) {
+            // Try to create directory
+            is_dir($useFile) || mkdir($useFile);
             // Get file name
-            file_put_contents($useFile, $content, FILE_APPEND);
+            file_put_contents($useFile . DIRECTORY_SEPARATOR . date('Y-m-d') . ".log", $content, FILE_APPEND);
         }
 
         // Check if Printer should print to console

@@ -1,12 +1,12 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\Analyzer;
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Tests\Config\DefaultRecordGetterConfig;
-use Duckster\Analyzer\Tests\Config\DisableConfig;
+use Duckstery\Analyzer\Analyzer;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Tests\Config\DefaultRecordGetterConfig;
+use Duckstery\Analyzer\Tests\Config\DisableConfig;
 use PHPUnit\Framework\TestCase;
 
 class AAnalyzerInitTest extends TestCase

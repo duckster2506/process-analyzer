@@ -1,9 +1,9 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Config;
+namespace Duckstery\Analyzer\Tests\Config;
 
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Tests\AnalyzerTest;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Tests\AnalyzerTest;
 
 class DefaultRecordGetterConfig extends AnalyzerConfig
 {

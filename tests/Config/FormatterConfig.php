@@ -1,9 +1,9 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Config;
+namespace Duckstery\Analyzer\Tests\Config;
 
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Tests\AnalyzerConfigTest;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Tests\AnalyzerConfigTest;
 
 class FormatterConfig extends AnalyzerConfig
 {

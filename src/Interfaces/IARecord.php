@@ -1,6 +1,6 @@
 <?php
 
-namespace Duckster\Analyzer\Interfaces;
+namespace Duckstery\Analyzer\Interfaces;
 
 interface IARecord
 {

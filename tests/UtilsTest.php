@@ -1,8 +1,8 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\Utils;
+use Duckstery\Analyzer\Utils;
 use PHPUnit\Framework\TestCase;
 
 class UtilsTest extends TestCase

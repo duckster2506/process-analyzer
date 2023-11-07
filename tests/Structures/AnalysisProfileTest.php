@@ -1,9 +1,9 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Structures;
+namespace Duckstery\Analyzer\Tests\Structures;
 
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
 use PHPUnit\Framework\TestCase;
 
 class AnalysisProfileTest extends TestCase

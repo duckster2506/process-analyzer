@@ -1,8 +1,8 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Config;
+namespace Duckstery\Analyzer\Tests\Config;
 
-use Duckster\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\AnalyzerConfig;
 
 class HideUIDConfig extends AnalyzerConfig
 {

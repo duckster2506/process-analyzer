@@ -1,9 +1,9 @@
 <?php
 
-namespace Duckster\Analyzer\Structures;
+namespace Duckstery\Analyzer\Structures;
 
-use Duckster\Analyzer\Analyzer;
-use Duckster\Analyzer\Interfaces\IARecord;
+use Duckstery\Analyzer\Analyzer;
+use Duckstery\Analyzer\Interfaces\IARecord;
 
 class AnalysisRecord implements IARecord
 {

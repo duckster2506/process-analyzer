@@ -26,12 +26,12 @@
   "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
-      "Duckster\\Analyzer\\": "src"
+      "Duckstery\\Analyzer\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Duckster\\Analyzer\\Tests\\": "tests"
+      "Duckstery\\Analyzer\\Tests\\": "tests"
     }
   },
   "scripts": {

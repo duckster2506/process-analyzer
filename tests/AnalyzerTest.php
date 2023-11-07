@@ -1,13 +1,13 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\Analyzer;
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Tests\Config\DefaultRecordGetterConfig;
-use Duckster\Analyzer\Tests\Config\DisableConfig;
-use Duckster\Analyzer\Tests\Config\InvalidProfileInstanceConfig;
+use Duckstery\Analyzer\Analyzer;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Tests\Config\DefaultRecordGetterConfig;
+use Duckstery\Analyzer\Tests\Config\DisableConfig;
+use Duckstery\Analyzer\Tests\Config\InvalidProfileInstanceConfig;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerTest extends TestCase
@@ -245,15 +245,16 @@ class AnalyzerTest extends TestCase
 
     public function testCanFlush()
     {
+        $filename = "logs" . DIRECTORY_SEPARATOR . date('Y-m-d') . ".log";
         // Remove file
-        if (file_exists("logs/log.txt")) {
-            unlink("logs/log.txt");
+        if (file_exists($filename)) {
+            unlink($filename);
         }
         // Try to flush without any Profile
         Analyzer::flush();
 
         // Not thing happen and file will not be printed
-        $this->assertFalse(file_exists("logs/log.txt"));
+        $this->assertFalse(file_exists($filename));
 
         // Create 2 Profile
         Analyzer::profile("Another");
@@ -267,7 +268,7 @@ class AnalyzerTest extends TestCase
         Analyzer::flush("Profile");
 
         // File is printed
-        $this->assertTrue(file_exists("logs/log.txt"));
+        $this->assertTrue(file_exists($filename));
         // Only "Profile" is flush and delete
         $this->assertArrayHasKey("Another", Analyzer::getProfiles());
 
@@ -280,9 +281,10 @@ class AnalyzerTest extends TestCase
 
     public function testCanNotFlushWhenDisabled(): void
     {
+        $filename = "logs" . DIRECTORY_SEPARATOR . date('Y-m-d') . ".log";
         // Try to remove file
-        if (file_exists("logs/log.txt")) {
-            unlink("logs/log.txt");
+        if (file_exists($filename)) {
+            unlink($filename);
         }
 
         // Create Profile
@@ -299,7 +301,7 @@ class AnalyzerTest extends TestCase
         Analyzer::flush("Profile");
 
         // File is not printed since Analyzer is disabled
-        $this->assertFalse(file_exists("logs/log.txt"));
+        $this->assertFalse(file_exists($filename));
         // Profile "Profile" is not flushed
         $this->assertArrayHasKey("Profile", Analyzer::getProfiles());
     }

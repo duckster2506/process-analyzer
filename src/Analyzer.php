@@ -1,9 +1,9 @@
 <?php
 
-namespace Duckster\Analyzer;
+namespace Duckstery\Analyzer;
 
-use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Interfaces\IAProfile;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
 
 class Analyzer
 {

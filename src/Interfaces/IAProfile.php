@@ -1,8 +1,8 @@
 <?php
 
-namespace Duckster\Analyzer\Interfaces;
+namespace Duckstery\Analyzer\Interfaces;
 
-use Duckster\Analyzer\Structures\AnalysisRecord;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
 
 interface IAProfile
 {

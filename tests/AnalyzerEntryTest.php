@@ -1,12 +1,12 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Tests\Config\InvalidRecordInstanceConfig;
-use Duckster\Analyzer\Analyzer;
-use Duckster\Analyzer\AnalyzerEntry;
-use Duckster\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Tests\Config\InvalidRecordInstanceConfig;
+use Duckstery\Analyzer\Analyzer;
+use Duckstery\Analyzer\AnalyzerEntry;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerEntryTest extends TestCase

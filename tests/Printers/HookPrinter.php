@@ -1,16 +1,14 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Config;
+namespace Duckstery\Analyzer\Tests\Printers;
 
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Interfaces\IAProfile;
-use Duckster\Analyzer\Interfaces\IARecord;
-use Duckster\Analyzer\Tests\AnalysisPrinterTest;
+use Duckstery\Analyzer\AnalysisPrinter;
+use Duckstery\Analyzer\Interfaces\IAProfile;
+use Duckstery\Analyzer\Interfaces\IARecord;
+use Duckstery\Analyzer\Tests\AnalysisPrinterTest;
 
-class Hook2Config extends AnalyzerConfig
+class HookPrinter extends AnalysisPrinter
 {
-    protected bool $prettyPrint = false;
-
     /**
      * Before modifying Profile
      *

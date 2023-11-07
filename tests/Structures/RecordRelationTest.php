@@ -1,10 +1,10 @@
 <?php
 
-namespace Duckster\Analyzer\Tests\Structures;
+namespace Duckstery\Analyzer\Tests\Structures;
 
-use Duckster\Analyzer\Structures\RecordRelation;
+use Duckstery\Analyzer\Structures\RecordRelation;
 use PHPUnit\Framework\TestCase;
-use Duckster\Analyzer\Structures\AnalysisRecord;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
 
 class RecordRelationTest extends TestCase
 {

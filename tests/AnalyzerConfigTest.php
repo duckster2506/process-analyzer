@@ -1,12 +1,12 @@
 <?php
 
-namespace Duckster\Analyzer\Tests;
+namespace Duckstery\Analyzer\Tests;
 
-use Duckster\Analyzer\AnalysisPrinter;
-use Duckster\Analyzer\AnalyzerConfig;
-use Duckster\Analyzer\Structures\AnalysisProfile;
-use Duckster\Analyzer\Structures\AnalysisRecord;
-use Duckster\Analyzer\Tests\Config\FormatterConfig;
+use Duckstery\Analyzer\AnalysisPrinter;
+use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
+use Duckstery\Analyzer\Tests\Config\FormatterConfig;
 use PHPUnit\Framework\TestCase;
 
 class AnalyzerConfigTest extends TestCase
@@ -68,7 +68,7 @@ class AnalyzerConfigTest extends TestCase
 
     public function test_default_useFile(): void
     {
-        $this->assertEquals("logs/log.txt", $this->config->useFile());
+        $this->assertEquals("logs", $this->config->useFile());
     }
 
     public function test_default_useConsole(): void

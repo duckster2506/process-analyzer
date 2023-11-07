@@ -1,6 +1,6 @@
 <?php
 
-namespace Duckster\Analyzer;
+namespace Duckstery\Analyzer;
 
 class Utils
 {
