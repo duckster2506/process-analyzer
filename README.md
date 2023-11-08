@@ -606,8 +606,10 @@ public class SomeController
     public function handle(): void
     {
         $uid = Analyzer::start("SomeController::handle");
+        // Or Analyzer::start("SomeController::handle");
         // Todo
         Analyzer::stop($uid);
+        // Or Analyzer::stop();
     }
 }
 ```
@@ -638,8 +640,10 @@ public class SomeController
     public function handle(): void
     {
         $uid = Analyzer::start();
+        // Or Analyzer::start();
         // Todo
         Analyzer::stop($uid);
+        // Or Analyzer::stop();
     }
 }
 ```
@@ -670,15 +674,19 @@ public class SomeController
     public function handle(): void
     {
         $uid = Analyzer::startProfile("Profile 1");
+        // Or Analyzer::startProfile("Profile 1");
         $this->todo();
-        Analyzer::stop($uid);
+        Analyzer::stopProfile("Profile 1", $uid);
+        // Or Analyzer::stopProfile("Profile 1");
     }
     
     public function todo(): void
     {
         $uid = Analyzer::startProfile("Profile 2");
+        // Or Analyzer::startProfile("Profile 2");
         $this->todo();
-        Analyzer::stop($uid);
+        Analyzer::stopProfile("Profile 2", $uid);
+        // Or Analyzer::stopProfile("Profile 2");
     }
 }
 ```

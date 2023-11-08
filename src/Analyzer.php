@@ -202,10 +202,10 @@ class Analyzer
     /**
      * Stop the Record with $executionUID of Default Profile
      *
-     * @param string $executionUID
+     * @param string|null $executionUID
      * @return void
      */
-    public static function stop(string $executionUID): void
+    public static function stop(?string $executionUID = null): void
     {
         self::stopProfile(self::$config->defaultProfile(), $executionUID);
     }
@@ -214,10 +214,10 @@ class Analyzer
      * Stop the Record with $executionUID of $profile Profile
      *
      * @param string $profileName
-     * @param string $executionUID
+     * @param string|null $executionUID
      * @return void
      */
-    public static function stopProfile(string $profileName, string $executionUID): void
+    public static function stopProfile(string $profileName, ?string $executionUID = null): void
     {
         // Stop recording
         self::profile($profileName)?->stop($executionUID);
