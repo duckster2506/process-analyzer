@@ -184,7 +184,7 @@ class Analyzer
      */
     public static function start(?string $title = null): string
     {
-        return self::startProfile(self::$config->defaultProfile(), $title);
+        return self::startProfile(self::$config->defaultProfile(), self::getCallerAsDefault($title));
     }
 
     /**

@@ -314,6 +314,13 @@ class AnalyzerTest extends TestCase
         // Check Record's name
         $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
         $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
+
+        $uid1 = Analyzer::start();
+        $uid2 = Analyzer::start("Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
     }
 
     public function testCanGetCallerWithConfig(): void
