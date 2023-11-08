@@ -3,7 +3,6 @@
 namespace Duckstery\Analyzer;
 
 use Duckstery\Analyzer\Interfaces\IAProfile;
-use Duckstery\Analyzer\Structures\AnalysisProfile;
 
 class Analyzer
 {

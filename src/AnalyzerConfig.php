@@ -2,8 +2,6 @@
 
 namespace Duckstery\Analyzer;
 
-use Duckstery\Analyzer\Interfaces\IAProfile;
-use Duckstery\Analyzer\Interfaces\IARecord;
 use Duckstery\Analyzer\Structures\AnalysisProfile;
 use Duckstery\Analyzer\Structures\AnalysisRecord;
 
