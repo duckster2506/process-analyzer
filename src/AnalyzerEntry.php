@@ -127,7 +127,7 @@ class AnalyzerEntry
                         $index = 3;
                     }
 
-                    return "Function: " . $backtrace[$index]['function'];
+                    $output = "Function: " . $backtrace[$index]['function'];
                 }
                 return $output;
             } else {
