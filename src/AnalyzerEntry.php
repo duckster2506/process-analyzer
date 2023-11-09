@@ -113,7 +113,6 @@ class AnalyzerEntry
             if (is_null($default)) {
                 // Get the backtrace
                 $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 4);
-                file_put_contents("logs/log.txt", print_r($backtrace, true), FILE_APPEND);
                 // Count the actual size of $backtrace
                 $size = count($backtrace);
                 // Get output
