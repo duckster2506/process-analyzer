@@ -14,22 +14,22 @@ class AnalysisProfile implements IAProfile
     /**
      * @var string Profile's name
      */
-    private string $name;
+    protected string $name;
 
     /**
      * @var AnalysisRecord[] Records
      */
-    private array $records;
+    protected array $records;
 
     /**
      * @var array Active Records
      */
-    private array $activeIds;
+    protected array $activeIds;
 
     /**
      * @var array Stopped Records
      */
-    private array $stopped;
+    protected array $stopped;
 
     // ***************************************
     // Public API

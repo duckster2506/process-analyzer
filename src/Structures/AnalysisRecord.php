@@ -14,47 +14,47 @@ class AnalysisRecord implements IARecord
     /**
      * @var string Record's UID
      */
-    private string $uid;
+    protected string $uid;
 
     /**
      * @var string Record's name
      */
-    private string $name;
+    protected string $name;
 
     /**
      * @var array Mark preparation before start of recording
      */
-    private array $preStartSnapshot;
+    protected array $preStartSnapshot;
 
     /**
      * @var array Mark start of recording
      */
-    private array $startSnapshot;
+    protected array $startSnapshot;
 
     /**
      * @var array Mark preparation before stop of recording
      */
-    private array $preStopSnapshot;
+    protected array $preStopSnapshot;
 
     /**
      * @var array Mark stop of recording
      */
-    private array $stopSnapshot;
+    protected array $stopSnapshot;
 
     /**
      * @var int Record status
      */
-    private int $status;
+    protected int $status;
 
     /**
      * @var RecordRelation[] $relations Record's relation
      */
-    private array $relations;
+    protected array $relations;
 
     /**
      * @var array Extra information
      */
-    private array $extras;
+    protected array $extras;
 
     // ***************************************
     // Public API
@@ -438,7 +438,7 @@ class AnalysisRecord implements IARecord
      *
      * @return void
      */
-    private function checkRelations(): void
+    protected function checkRelations(): void
     {
         // Iterate through each relation
         foreach ($this->relations as $relation) {
@@ -457,7 +457,7 @@ class AnalysisRecord implements IARecord
      * @param array $extras
      * @return void
      */
-    private function applyExtras(string $key, array $extras): void
+    protected function applyExtras(string $key, array $extras): void
     {
         // Iterate through each $extra
         foreach ($extras as $extra => $provider) {
@@ -500,7 +500,7 @@ class AnalysisRecord implements IARecord
      * @param int|float $init
      * @return int|float
      */
-    private function calculateActual(string $key, int|float $init): int|float
+    protected function calculateActual(string $key, int|float $init): int|float
     {
         // Capitalize $key
         $capitalized = ucfirst($key);

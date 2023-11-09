@@ -17,17 +17,17 @@ class AnalysisPrinter extends IAPrinter
     /**
      * @var AnalysisDataset[] Pretty print datasets
      */
-    private array $datasets;
+    protected array $datasets;
 
     /**
      * @var int Count the number of Record
      */
-    private int $count;
+    protected int $count;
 
     /**
      * @var string Final content
      */
-    private string $content;
+    protected string $content;
 
     // ***************************************
     // Public API
@@ -91,7 +91,7 @@ class AnalysisPrinter extends IAPrinter
      * @param IAProfile $profile
      * @return void
      */
-    private function preprocessProfile(IAProfile $profile): void
+    protected function preprocessProfile(IAProfile $profile): void
     {
         // Call hook
         Utils::callHook($this, "onPreprocessProfile", $profile);
@@ -107,7 +107,7 @@ class AnalysisPrinter extends IAPrinter
      * @param IARecord $record
      * @return array
      */
-    private function preprocessRecord(IARecord $record): array
+    protected function preprocessRecord(IARecord $record): array
     {
         // Hook: beforePrint for AnalysisProfile
         Utils::callHook($this, "onPreprocessRecord", $record);
@@ -140,7 +140,7 @@ class AnalysisPrinter extends IAPrinter
      *
      * @param array $data
      */
-    private function convertAndPushToDatasets(array $data): void
+    protected function convertAndPushToDatasets(array $data): void
     {
         // Iterate through each $data key
         foreach ($data as $key => $value) {
@@ -157,7 +157,7 @@ class AnalysisPrinter extends IAPrinter
      * @param array $data
      * @return void
      */
-    private function convertAndAppendToString(array $data): void
+    protected function convertAndAppendToString(array $data): void
     {
         $line = [""];
         // UID
@@ -187,7 +187,7 @@ class AnalysisPrinter extends IAPrinter
      * @param AnalysisDataset[] $datasets
      * @return void
      */
-    private function convertToTableAndAppendToString(array $datasets): void
+    protected function convertToTableAndAppendToString(array $datasets): void
     {
         // Create column width structure (2 for padding)
         $widthOfColumns = array_map(fn($dataset) => $dataset->getMaxLength() + 2, $datasets);
@@ -221,7 +221,7 @@ class AnalysisPrinter extends IAPrinter
      * @param IAProfile $profile
      * @return void
      */
-    private function wrapContentInProfile(IAProfile $profile): void
+    protected function wrapContentInProfile(IAProfile $profile): void
     {
         $this->content =
             $profile->getName() . " " . str_repeat("-", 20) . PHP_EOL .
@@ -234,7 +234,7 @@ class AnalysisPrinter extends IAPrinter
      *
      * @return void
      */
-    private function printContent(string $content)
+    protected function printContent(string $content)
     {
         // Hook: printRecord
         Utils::callHook($this, "onPrintProfileString", $this->content);
@@ -264,7 +264,7 @@ class AnalysisPrinter extends IAPrinter
      * @param string $end
      * @return string
      */
-    private function createBorderRow(array $widthOfColumns, string $start, string $separator, string $end): string
+    protected function createBorderRow(array $widthOfColumns, string $start, string $separator, string $end): string
     {
         $content = array_map(fn($width) => str_repeat(Analyzer::config()->horizontalLineChar(), $width), $widthOfColumns);
         return $start . implode($separator, $content) . $end;
@@ -276,7 +276,7 @@ class AnalysisPrinter extends IAPrinter
      * @param array $widthOfColumns
      * @return string
      */
-    private function createHeader(array $widthOfColumns): string
+    protected function createHeader(array $widthOfColumns): string
     {
         // Create first row (top border)
         $output = $this->createBorderRow(
