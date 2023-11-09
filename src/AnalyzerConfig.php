@@ -345,14 +345,14 @@ class AnalyzerConfig
         if (is_callable($this->timeFormatter))
             return call_user_func($this->timeFormatter, $value);
 
-        $offset = match (strtolower($this->timeUnit)) {
+        $offset = match (strtolower($this->timeUnit())) {
             "ns", "nanosecond" => 1,
             "μs", "microsecond" => 1e+3,
             "s", "second" => 1e+9,
             default => 1e+6
         };
 
-        $unit = match (strtolower($this->timeUnit)) {
+        $unit = match (strtolower($this->timeUnit())) {
             "ns", "nanosecond" => "ns",
             "μs", "microsecond" => "μs",
             "s", "second" => "s",
@@ -382,14 +382,14 @@ class AnalyzerConfig
         if (is_callable($this->memFormatter))
             return call_user_func($this->memFormatter, $value);
 
-        $offset = match (strtolower($this->memUnit)) {
+        $offset = match (strtolower($this->memUnit())) {
             "b", "byte" => 1,
             "kb", "kilobyte" => 1024,
             "gb", "gigabyte" => 1073741824,
             default => 1048576
         };
 
-        $unit = match (strtolower($this->memUnit)) {
+        $unit = match (strtolower($this->memUnit())) {
             "b", "byte" => "b",
             "kb", "kilobyte" => "kb",
             "gb", "gigabyte" => "gb",
