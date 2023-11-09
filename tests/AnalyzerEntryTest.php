@@ -3,6 +3,7 @@
 namespace Duckstery\Analyzer\Tests;
 
 use Duckstery\Analyzer\AnalyzerConfig;
+use Duckstery\Analyzer\Tests\Config\DefaultRecordGetterConfig;
 use Duckstery\Analyzer\Tests\Config\InvalidRecordInstanceConfig;
 use Duckstery\Analyzer\Analyzer;
 use Duckstery\Analyzer\AnalyzerEntry;
@@ -225,5 +226,46 @@ class AnalyzerEntryTest extends TestCase
         $this->assertSame($record3, $record3->getRelations()[0]->getTarget());
         // Check relation's type
         $this->assertTrue($record3->getRelations()[0]->isIntersect());
+    }
+
+    public function testCanGetLevelCallerOfCaller(): void
+    {
+        $uid1 = Analyzer::profile("Profile")->start();
+        $uid2 = Analyzer::profile("Profile")->start("Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
+
+        $uid1 = Analyzer::startProfile("Profile");
+        $uid2 = Analyzer::startProfile("Profile", "Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
+
+        $uid1 = Analyzer::start();
+        $uid2 = Analyzer::start("Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
+    }
+
+    public function testCanGetCallerWithConfig(): void
+    {
+        Analyzer::tryToInit(new DefaultRecordGetterConfig());
+        $uid1 = Analyzer::start();
+        $uid2 = Analyzer::start("Record 1");
+
+        // Check Record's name
+        $this->assertEquals("Hello world!", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
+        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
+    }
+
+
+    public static function printHelloWorld(): string
+    {
+        return "Hello world!";
     }
 }

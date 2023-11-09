@@ -5,7 +5,6 @@ namespace Duckstery\Analyzer\Tests;
 use Duckstery\Analyzer\Analyzer;
 use Duckstery\Analyzer\AnalyzerConfig;
 use Duckstery\Analyzer\Structures\AnalysisProfile;
-use Duckstery\Analyzer\Tests\Config\DefaultRecordGetterConfig;
 use Duckstery\Analyzer\Tests\Config\DisableConfig;
 use Duckstery\Analyzer\Tests\Config\InvalidProfileInstanceConfig;
 use PHPUnit\Framework\TestCase;
@@ -306,36 +305,37 @@ class AnalyzerTest extends TestCase
         $this->assertArrayHasKey("Profile", Analyzer::getProfiles());
     }
 
-    public function testCanGetLevelCallerOfCaller(): void
+    public function testCanExcludeSelfMemoryWhenUsingStart(): void
     {
-        $uid1 = Analyzer::startProfile("Profile");
-        $uid2 = Analyzer::startProfile("Profile", "Record 1");
+        // Start Record 1
+        $uid1 = Analyzer::start("Record 1");
+        // Start Record 2
+        $uid2 = Analyzer::start("Record 2");
+        // Stop Record 2
+        Analyzer::stop();
+        // Stop Record 1
+        Analyzer::stop();
 
-        // Check Record's name
-        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Profile"]->get($uid1)->getName());
-        $this->assertEquals("Record 1", Analyzer::getProfiles()["Profile"]->get($uid2)->getName());
-
-        $uid1 = Analyzer::start();
-        $uid2 = Analyzer::start("Record 1");
-
-        // Check Record's name
-        $this->assertEquals("Function: testCanGetLevelCallerOfCaller", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
-        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
+        // Record 1 actual memory must equal 0
+        $this->assertEquals(0, Analyzer::getProfiles()["Default"]->get($uid1)->actualMem());
+        // Record 2 actual memory must equal 0
+        $this->assertEquals(0, Analyzer::getProfiles()["Default"]->get($uid2)->actualMem());
     }
 
-    public function testCanGetCallerWithConfig(): void
+    public function testCanExcludeSelfMemoryWhenUsingStartProfile(): void
     {
-        Analyzer::tryToInit(new DefaultRecordGetterConfig());
-        $uid1 = Analyzer::start();
-        $uid2 = Analyzer::start("Record 1");
+        // Start Record 1
+        $uid1 = Analyzer::startProfile("Profile", "Record 1");
+        // Start Record 2
+        $uid2 = Analyzer::startProfile("Profile", "Record 2");
+        // Stop Record 2
+        Analyzer::stopProfile("Profile");
+        // Stop Record 1
+        Analyzer::stopProfile("Profile");
 
-        // Check Record's name
-        $this->assertEquals("Hello world!", Analyzer::getProfiles()["Default"]->get($uid1)->getName());
-        $this->assertEquals("Record 1", Analyzer::getProfiles()["Default"]->get($uid2)->getName());
-    }
-
-    public static function printHelloWorld(): string
-    {
-        return "Hello world!";
+        // Record 1 actual memory must equal 0
+        $this->assertEquals(0, Analyzer::getProfiles()["Profile"]->get($uid1)->actualMem());
+        // Record 2 actual memory must equal 0
+        $this->assertEquals(0, Analyzer::getProfiles()["Profile"]->get($uid2)->actualMem());
     }
 }
