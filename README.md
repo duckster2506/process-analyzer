@@ -130,7 +130,7 @@ to the providers array in ```config/app.php```
 Then, you can publish config file for better customization
 
 ```shell
-php artisan vendor:publish --provider=Duckstery\Laravel\Analyzer\ProcessAnalyzerServiceProvider
+php artisan vendor:publish --provider="Duckstery\Laravel\Analyzer\ProcessAnalyzerServiceProvider"
 ```
 
 ## Configuration
