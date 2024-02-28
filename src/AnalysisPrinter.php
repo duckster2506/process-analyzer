@@ -7,6 +7,7 @@ use Duckstery\Analyzer\Interfaces\IAProfile;
 use Duckstery\Analyzer\Interfaces\IARecord;
 use Duckstery\Analyzer\Structures\AnalysisDataset;
 use Duckstery\Analyzer\Structures\AnalysisProfile;
+use Duckstery\Analyzer\Structures\AnalysisRecord;
 
 class AnalysisPrinter extends IAPrinter
 {
@@ -54,20 +55,23 @@ class AnalysisPrinter extends IAPrinter
         // Hook before convert Profile
         $this->preprocessProfile($profile);
 
+        // Get Records
+        $records = $profile->getRecords();
+        // Count
+        $size = count($records);
+
         // Iterate through each $record
-        foreach ($profile->getRecords() as $record) {
+        for ($i = 0; $i < $size; $i++) {
             // Increase count
             $this->count += 1;
             // Preprocess Record's data
-            $data = $this->preprocessRecord($record);
+            $data = $this->preprocessRecord($records[$i]);
+            // Convert data
+            $this->convertData($data);
 
-            // Check if Printer should prepare for pretty print
-            if (Analyzer::config()->prettyPrint()) {
-                // Convert Record to datasets
-                $this->convertAndPushToDatasets($data);
-            } else {
-                // Convert to printable cols
-                $this->convertAndAppendToString($data);
+            // Check if ...
+            if (Analyzer::config()->showStructure()) {
+                $i += $this->processRecordByRelations($records[$i], $data);
             }
         }
 
@@ -121,18 +125,77 @@ class AnalysisPrinter extends IAPrinter
         $output = [
             'uid' => $record->getUID(),
             'name' => $record->getName(),
-            'time' => Analyzer::config()->timeFormatter($record->actualTime()),
-            'memory' => Analyzer::config()->memFormatter($record->actualMem()),
+            'time' => $record->actualTime(),
+            'memory' => $record->actualMem(),
             ...$record->getExtras()
         ];
 
+        return $output;
+    }
+
+    /**
+     * Format data
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function formatData(array $data): array
+    {
+        // Format time and memory
+        $data['time'] = Analyzer::config()->timeFormatter($data['time']);
+        $data['memory'] = Analyzer::config()->memFormatter($data['memory']);
+
         // Skip UID column
-        if (!Analyzer::config()->showUID()) unset($output['uid']);
+        if (!Analyzer::config()->showUID()) unset($data['uid']);
 
         // Hook: onEachPreprocessedRecord
-        Utils::callHook($this, "onEachPreprocessedRecord", $output);
+        Utils::callHook($this, "onEachPreprocessedRecord", $data);
 
-        return $output;
+        return $data;
+    }
+
+    /**
+     * Process another Record by following $record's relations
+     * This method is only applicable to AnalysisRecord
+     *
+     * @param IARecord $record
+     * @param array $recordData
+     * @return int
+     */
+    protected function processRecordByRelations(IARecord $record, array $recordData): int
+    {
+        // Number of processed Record
+        $output = 0;
+
+        // If not an instance of AnalysisRecord, skip this step
+        if (!$record instanceof AnalysisRecord::class) return $output;
+
+        // Iterate through each relation
+        /** @var AnalysisRecord $record */
+        foreach ($record->getRelations() as $relation) {
+            // Check if
+        }
+    }
+
+    /**
+     * Convert data to printable
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function convertData(array $data): array
+    {
+        // Format data
+        $data = $this->formatData($data);
+
+        // Check if Printer should prepare for pretty print
+        if (Analyzer::config()->prettyPrint()) {
+            // Convert Record to datasets
+            $this->convertAndPushToDatasets($data);
+        } else {
+            // Convert to printable cols
+            $this->convertAndAppendToString($data);
+        }
     }
 
     /**

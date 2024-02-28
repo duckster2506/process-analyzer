@@ -77,6 +77,10 @@ class AnalyzerConfig
      */
     protected bool $showUid = true;
 
+    protected bool $showStructure = false;
+
+    protected bool $showTimePercentToRoot = false;
+
     /**
      * @var string|false Print to file
      */
@@ -263,6 +267,28 @@ class AnalyzerConfig
     {
         return $this->showUid;
     }
+
+    /**
+     * Show structure
+     *
+     * @return bool
+     */
+    public function showStructure(): bool
+    {
+        return $this->showStructure;
+    }
+
+    /**
+     * Show
+     *
+     * @return bool
+     */
+    public function showTimePercentToRoot(): bool
+    {
+        return $this->showTimePercentToRoot;
+    }
+
+
 
     /**
      * Print to file

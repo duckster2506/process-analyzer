@@ -14,14 +14,14 @@ class RecordRelation
     private AnalysisRecord $owner;
 
     /**
-     * @var bool Is Records intersect, if not, it'll be an ownership relation
-     */
-    private bool $isIntersect;
-
-    /**
      * @var AnalysisRecord Target Record
      */
     private AnalysisRecord $target;
+
+    /**
+     * @var bool Is Records intersect, if not, it'll be an ownership relation
+     */
+    private bool $isIntersect;
 
     // ***************************************
     // Public API

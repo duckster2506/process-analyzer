@@ -2,6 +2,8 @@
 
 namespace Duckstery\Analyzer\Interfaces;
 
+use Duckstery\Analyzer\Structures\RecordRelation;
+
 interface IARecord
 {
     /**
