@@ -84,6 +84,9 @@ composer require --dev duckstery/process-analyzer
 
 ### For Laravel
 
+> [!WARNING]  
+> This integration only work properly while handling request individually (1 request at a time) because it'll flush everything out at the end of the request.
+
 Run script to install
 
 ```shell
@@ -492,7 +495,11 @@ Duckstery\Analyzer\Analyzer::class
 ```Analyzer``` will only measure execution time and memory of your execution. It'll exclude self execution time and
 memory out of final result.
 
-For any unmentioned situation, you can issue it to me.
+The basic approach is placing your logic inside ```start``` and ```stop```. When everything is done, call ```flush``` so Analyzer can generate the report for you.
+
+The Laravel integration has a specific middleware that will execute ```flush``` at the end of request. So you don't need to ```flush``` while using that integration. But in most case, you have to ```flush``` at the end of your program (or at least at the end of the process that you desired to measure).
+
+For any unmentioned situation, you can issue me for more detail.
 
 ### Basic
 
@@ -519,6 +526,10 @@ public class SomeController
         
         // Stop the latest recording of Profile
         Analyzer::profile("SomeController")->stop();
+
+        // Flush
+        Analyzer::flush("SomeController");
+        // Or Analyzer::flush(); to flush all Profile
     }
     
     public function processA(): void
@@ -573,7 +584,7 @@ SomeController --------------------
 
 ### Use default Profile name and extra metrics
 
-config
+Config
 
 ```php
 $profileExtras = [
@@ -610,6 +621,9 @@ public class SomeController
         // Todo
         Analyzer::stop($uid);
         // Or Analyzer::stop();
+
+        // Flush
+        Analyzer::flush();
     }
 }
 ```
@@ -644,6 +658,9 @@ public class SomeController
         // Todo
         Analyzer::stop($uid);
         // Or Analyzer::stop();
+
+        // Flush
+        Analyzer::flush();
     }
 }
 ```
@@ -678,6 +695,9 @@ public class SomeController
         $this->todo();
         Analyzer::stopProfile("Profile 1", $uid);
         // Or Analyzer::stopProfile("Profile 1");
+
+        // Flush
+        Analyzer::flush();
     }
     
     public function todo(): void
